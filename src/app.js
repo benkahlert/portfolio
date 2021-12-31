@@ -1,16 +1,24 @@
+// TODOS: 
+// Physics objects
+// Implement AWS
+
 import './style.css';
 import * as THREE from 'three';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
-import { loadGlove, gloveAnimationMixer } from './glove';
+import { loadGlove, glove, gloveAnimationMixer } from './glove';
 import { addLights } from './lighting';
 import { gltfLoader, textureLoader } from './loaders';
+
+import plantVertexShader from './shaders/portal/vertex.glsl'
+import plantFragmentShader from './shaders/portal/fragment.glsl'
 
 import * as dat from 'dat.gui';
 const debugObject = {};
 export const gui = new dat.GUI();
+gui.hide();
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -83,11 +91,11 @@ const renderPass = new RenderPass(scene, camera);
 effectComposer.addPass(renderPass);
 
 // Textures
-const bakedDeskSceneTexture = textureLoader.load('./textures/deskscene.jpg');
+const bakedDeskSceneTexture = textureLoader.load('./textures/desksceneblue.jpg');
 bakedDeskSceneTexture.flipY = false;
 bakedDeskSceneTexture.encoding = THREE.sRGBEncoding;
 
-const bakedDeskPropsTexture = textureLoader.load('./textures/deskprops.jpg');
+const bakedDeskPropsTexture = textureLoader.load('./textures/deskpropsnewkeys.jpg');
 bakedDeskPropsTexture.flipY = false;
 bakedDeskPropsTexture.encoding = THREE.sRGBEncoding;
 
@@ -99,25 +107,171 @@ const bakedPhysicsObjectsTexture = textureLoader.load('./textures/desk_physics_o
 bakedPhysicsObjectsTexture.flipY = false;
 bakedPhysicsObjectsTexture.encoding = THREE.sRGBEncoding;
 
+const monitorFaceTexture = textureLoader.load('./textures/images/wallpaper.jpg');
+monitorFaceTexture.repeat.set(2, 2);
+monitorFaceTexture.offset.set(-.5, -.5);
+
 // Materials
 const deskSceneBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedDeskSceneTexture });
 const deskPropsBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedDeskPropsTexture });
+
 const deskMonitorBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedMonitorTexture });
+const monitorFaceMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFEE, map: monitorFaceTexture, emissive: 0x222222 });
 const deskPhysicsObjectsBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedPhysicsObjectsTexture });
-const plantMaterial = new THREE.MeshBasicMaterial({ color: 0x5CA15F, reflectivity: 0 });
+
+// Plant materials
+const potMaterial = new THREE.MeshStandardMaterial({ color: 0x8F452E });
+const plantMaterial = new THREE.MeshStandardMaterial({ color: 0x5CC15F });
+
+const plantShaderMaterial = new THREE.ShaderMaterial({
+  vertexShader: plantVertexShader,
+  fragmentShader: plantFragmentShader,
+});
+
+// Mug materials
+const mugMaterial = new THREE.MeshStandardMaterial({ color: 0xB6B1AC });
+
+const keyMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFEE });
 
 const deskSceneString = 'DeskScene';
 const monitorString = 'Monitor';
 const plantString = 'MovablePlant';
+const potString = 'MovablePot';
+const mugString = 'MovableMugObject';
+
+const allMeshs = [];
+
+// Computer images
+const computerImagePositions = {
+  './textures/images/github.png': { 
+    position: new THREE.Vector3(.95, 1.75, 1.25),
+    scale: .3,
+  },
+  './textures/images/linkedin.png': {
+    position: new THREE.Vector3(1.75, 1.75, 1.25),
+    scale: .3,
+  },
+  './textures/images/resume.png': {
+    position: new THREE.Vector3(1.325, 1.35, 1.25),
+    scale: .4,
+  },
+}
+
+const addComputerImage = (path) => {
+  const material = new THREE.MeshLambertMaterial({
+    map: textureLoader.load(path),
+    alphaTest: .25,
+  });
+  const scale = computerImagePositions[path].scale;
+  const geometry = new THREE.PlaneGeometry(scale, scale);
+  const mesh = new THREE.Mesh(geometry, material);
+  const position = computerImagePositions[path].position;
+  mesh.name = path;
+  mesh.position.x = position.x;
+  mesh.position.y = position.y;
+  mesh.position.z = position.z;
+  scene.add(mesh);
+  return mesh;
+}
+
+addLights();
+// loadGlove(scene, camera, effectComposer);
+
+// Raycaster
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let mousePosition = { x: 0, y: 0 };
+
+function onPointerMove( event ) {
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+  mousePosition.x = event.clientX / sizes.width;
+  mousePosition.y = event.clientY / sizes.height;
+
+  raycaster.setFromCamera( pointer, camera );
+  imageMeshIntersects = raycaster.intersectObjects(imageMeshs, false);
+  keyMeshIntersects = [];
+  keyMeshs.forEach(keyMesh => {
+    if (keyMeshs != undefined) {
+      const intersection = raycaster.intersectObject(keyMesh, false);
+      if (intersection.length > 0)
+        keyMeshIntersects.push(intersection[0]);
+    }
+  });
+
+  const mouseIntersect = raycaster.intersectObjects(allMeshs, true);
+  if (mouseIntersect.length > 0 && glove) {
+    if (!mouseIntersect[0].object.name.includes('Wall')) {
+      glove.position.copy(mouseIntersect[0].point);
+      glove.position.z = glove.position.z + .2;
+      glove.scale.copy(new THREE.Vector3(.015, .015, .015));
+    } else {
+      glove.position.copy(mouseIntersect[0].point);
+      glove.position.z = glove.position.z + .2;
+      glove.scale.copy(new THREE.Vector3(.04, .04, .04));
+    }
+  }
+}
+
+document.addEventListener('mousemove', onPointerMove);
+
+const imageMeshs = [];
+let imageMeshIntersects = [];
+imageMeshs.push(addComputerImage('./textures/images/github.png'));
+imageMeshs.push(addComputerImage('./textures/images/linkedin.png'));
+imageMeshs.push(addComputerImage('./textures/images/resume.png'));
+
+const getRandomInt = (max) => {
+  return Math.floor(Math.random() * max);
+}
+
+const imageMap = {
+  './textures/images/github.png': {
+    rotation: getRandomInt(2) / 10 - .1,
+    offset: getRandomInt(100),
+  },
+  './textures/images/linkedin.png': {
+    rotation: getRandomInt(2) / 10 - .1,
+    offset: getRandomInt(100),
+  },
+  './textures/images/resume.png': {
+    rotation: getRandomInt(2) / 10 - .1,
+    offset: getRandomInt(100),
+  },
+}
+
+// Clicking
+const githubUrl = 'https://github.com/benkahlert';
+const linkedinUrl = 'https://www.linkedin.com/in/benjamin-kahlert-0b4709126/';
+const resumeUrl = 'https://drive.google.com/file/d/1_IaPj3Qc3xBGi2IRy6fqbKvTXUC3qQWS/view?usp=sharing';
+
+const keyMeshs = [];
+let keyMeshIntersects = [];
+const keyPositionMap = {};
+
+document.addEventListener('mousedown', () => {
+  // If mouse is over an image when clicked
+  if (imageMeshIntersects.length > 0) {
+    const imageMesh = imageMeshIntersects[0];
+    if (imageMesh.object.name.includes('github')) {
+      window.open(githubUrl, '_blank')
+    } else if (imageMesh.object.name.includes('linkedin')) {
+      window.open(linkedinUrl, '_blank')
+    } else if (imageMesh.object.name.includes('resume')) {
+      window.open(resumeUrl, '_blank')
+    }
+  }
+});
 
 /**
  * Scene
  */
-// addLights();
-// loadGlove(scene, camera, effectComposer);
-
 gltfLoader.load('./desk_scene.glb', gltf => {
   gltf.scene.traverse(child => {
+    if (child.isMesh) {
+      allMeshs.push(child);
+    }
+    
     if (child.name.includes(deskSceneString)) {
       if (child.name.includes('Wall')) {
         child.scale.x *= 2;
@@ -125,8 +279,18 @@ gltfLoader.load('./desk_scene.glb', gltf => {
       }
       child.material = deskSceneBakedMaterial;
     } else if (child.name.includes(monitorString)) {
-      child.material = deskMonitorBakedMaterial;
+      if (child.name === 'MonitorFace') {
+        child.material = monitorFaceMaterial;
+      } else {
+        child.material = deskMonitorBakedMaterial;
+      }
     } else {
+      child.material = deskPropsBakedMaterial;
+    }
+
+    if (child.name.includes('Key') && !child.name.includes('KeyboardBase')) {
+      keyPositionMap[child.name] = new THREE.Vector3(child.position.x,child.position.y,child.position.z);
+      keyMeshs.push(child);
       child.material = deskPropsBakedMaterial;
     }
   });
@@ -135,53 +299,34 @@ gltfLoader.load('./desk_scene.glb', gltf => {
 });
 
 gltfLoader.load('./deskphysicsobjects.glb', gltf => {
+  const additions = [];
   gltf.scene.traverse(child => {
     if (child.name === plantString) {
       child.material = plantMaterial;
-    } else {
-      child.material = deskPhysicsObjectsBakedMaterial;
+      additions.push(child);
+    } else if (child.name === potString) {
+      child.material = potMaterial;
+      additions.push(child);
+    } else if (child.name === mugString) {
+      child.material = mugMaterial;
+      additions.push(child);
     }
   });
 
-  scene.add(gltf.scene);
+  additions.forEach(addition => {
+    scene.add(addition);
+    allMeshs.push(addition);
+  });
 });
-
-// TEMP
-debugObject.clearColor = '#7a6654';
-gui.addColor(debugObject, 'clearColor').onChange((color) => {
-  renderer.setClearColor(debugObject.clearColor);
-});
-
-debugObject.x = 0;
-debugObject.y = 0;
-debugObject.z = 0;
-
-gui.add(debugObject, 'x').onChange(x => {
-  camera.position.x = x;
-})
-gui.add(debugObject, 'y').onChange(y => {
-  camera.position.y = y;
-})
-gui.add(debugObject, 'z').onChange(z => {
-  camera.position.z = z;
-})
-
-let mousePosition = {
-  x: 0,
-  y: 0
-};
-
-document.onmousemove = (event) => {
-  mousePosition.x = event.clientX / sizes.width;
-  mousePosition.y = event.clientY / sizes.height;
-}
-
-const cameraStartPosition = camera.position;
 
 /**
  * Animate
  */
 const clock = new THREE.Clock();
+
+const lerp = (start, end, amt) => {
+  return (1 - amt) * start + amt * end;
+}
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
@@ -203,6 +348,55 @@ const tick = () => {
 
   camera.rotation.y = -(mousePosition.x - .5) / 40;
   camera.position.x = 1.5 + (mousePosition.x - .5) / 20;
+
+  let pointer = false;
+
+  // Keys
+  keyMeshs.forEach(key => {
+    let found = false;
+    keyMeshIntersects.forEach(intersect => {
+      if (key.name === intersect.object.name) {
+        found = true;
+        pointer = true;
+      }
+    });
+
+    if (found) {
+      key.position.y = lerp(key.position.y, keyPositionMap[key.name].y - .015, .1);
+    } else {
+      key.position.y = lerp(key.position.y, keyPositionMap[key.name].y, .2);
+    }
+  });
+
+  // Images
+  imageMeshs.forEach(image => {
+    let found = false;
+    imageMeshIntersects.forEach(intersect => {
+      if (image.name === intersect.object.name) {
+        found = true;
+        pointer = true;
+      }
+    });
+
+    if (found) {
+      image.scale.x = lerp(image.scale.x, 1.2, .1);
+      image.scale.y = lerp(image.scale.y, 1.2, .1);
+      image.rotation.z = lerp(image.rotation.z, Math.sin(elapsedTime * 2) * .3, .2);
+    } else {
+      image.scale.x = lerp(image.scale.x, 1, .2);
+      image.scale.y = lerp(image.scale.y, 1, .2);
+      image.rotation.z = lerp(image.rotation.z, imageMap[image.name].rotation + Math.sin(elapsedTime * .5 + imageMap[image.name].offset) * .15, .2);
+    }
+  });
+
+  // Glove rotation
+  if (glove)
+    glove.rotation.y = (mousePosition.x * -1.1) - .75;
+
+  if (pointer)
+    document.body.style.cursor = 'pointer';
+  else if (document.body.style.cursor === 'pointer')
+    document.body.style.cursor = 'auto';
 };
 
 tick();

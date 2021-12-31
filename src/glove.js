@@ -25,9 +25,14 @@ let action = undefined;
 const animationDuration = 0.035;
 const animationTimeScale = 3;
 
+export let glove = undefined;
+
 export const loadGlove = () => {
   // Model
   gltfLoader.load('./glove.glb', (gltf) => {
+    gltf.scene.scale.multiplyScalar(.015);
+    glove = gltf.scene;
+    gltf.scene.rotateY(80);
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
         setUpGloveMesh(child);
@@ -41,7 +46,7 @@ export const loadGlove = () => {
     action.clampWhenFinished = true;
     action.setDuration(animationDuration);
     action.setLoop(THREE.LoopOnce);
-    setUpOutlinePass(scene, camera);
+    // setUpOutlinePass(scene, camera);
   });
 };
 
@@ -50,7 +55,6 @@ const setUpGloveMesh = (mesh) => {
   mesh.material = gloveMaterial;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  // TODO: Make this based off name. Might be different once glove objects are merged in blender
   if (!gloveAnimationMixer) {
     gloveAnimationMixer = new THREE.AnimationMixer(mesh);
   }
@@ -95,7 +99,6 @@ let shouldOpenHand = true;
 
 window.addEventListener('mousedown', () => {
   if (action && shouldOpenHand) {
-    console.log('play');
     action.paused = false;
     shouldOpenHand = false;
     setUpAnimationActionForward();

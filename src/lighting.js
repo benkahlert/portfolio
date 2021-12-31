@@ -10,6 +10,10 @@ export const addLights = () => {
   const pointTwo = new THREE.PointLight(0xffffff, 0.2);
   pointTwo.position.set(-2, 2, -2);
   scene.add(pointTwo);
+
+  const pointThree = new THREE.PointLight(0xffffff, .2);
+  pointThree.position.set(1.325, 1.35, 1.5);
+  scene.add(pointThree);
   
   const ambient = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambient);
