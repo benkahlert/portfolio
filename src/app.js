@@ -4,6 +4,7 @@
 
 import './style.css';
 import * as THREE from 'three';
+import CANNON from 'cannon' 
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -183,13 +184,20 @@ const pointer = new THREE.Vector2();
 let mousePosition = { x: 0, y: 0 };
 
 function onPointerMove( event ) {
+  const oldX = pointer.x;
+  const oldY = pointer.y;
+
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
   mousePosition.x = event.clientX / sizes.width;
   mousePosition.y = event.clientY / sizes.height;
 
+  const diffX = pointer.x - oldX;
+  const diffY = pointer.y - oldY;
+
   raycaster.setFromCamera( pointer, camera );
   imageMeshIntersects = raycaster.intersectObjects(imageMeshs, false);
+
   keyMeshIntersects = [];
   keyMeshs.forEach(keyMesh => {
     if (keyMeshs != undefined) {
@@ -199,17 +207,10 @@ function onPointerMove( event ) {
     }
   });
 
-  const mouseIntersect = raycaster.intersectObjects(allMeshs, true);
-  if (mouseIntersect.length > 0 && glove) {
-    if (!mouseIntersect[0].object.name.includes('Wall')) {
-      glove.position.copy(mouseIntersect[0].point);
-      glove.position.z = glove.position.z + .2;
-      glove.scale.copy(new THREE.Vector3(.015, .015, .015));
-    } else {
-      glove.position.copy(mouseIntersect[0].point);
-      glove.position.z = glove.position.z + .2;
-      glove.scale.copy(new THREE.Vector3(.04, .04, .04));
-    }
+  draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
+
+  if (draggingMesh) {
+    mugBody.applyForce(new CANNON.Vec3(diffX * 200, diffY * 65, 0), mugBody.position);
   }
 }
 
@@ -248,6 +249,7 @@ const resumeUrl = 'https://drive.google.com/file/d/1_IaPj3Qc3xBGi2IRy6fqbKvTXUC3
 const keyMeshs = [];
 let keyMeshIntersects = [];
 const keyPositionMap = {};
+let draggingMesh = undefined;
 
 document.addEventListener('mousedown', () => {
   // If mouse is over an image when clicked
@@ -261,7 +263,15 @@ document.addEventListener('mousedown', () => {
       window.open(resumeUrl, '_blank')
     }
   }
+
+  if (draggableMeshIntersects.length > 0) {
+    draggingMesh = draggableMeshIntersects[0];
+  }
 });
+
+document.addEventListener('mouseup', () => {
+  draggingMesh = undefined;
+})
 
 /**
  * Scene
@@ -298,41 +308,97 @@ gltfLoader.load('./desk_scene.glb', gltf => {
   scene.add(gltf.scene);
 });
 
+let mug = null;
+let draggableMeshs = [];
+let draggableMeshIntersects = [];
+
 gltfLoader.load('./deskphysicsobjects.glb', gltf => {
   const additions = [];
   gltf.scene.traverse(child => {
     if (child.name === plantString) {
-      child.material = plantMaterial;
-      additions.push(child);
+      // child.material = plantMaterial;
+      // additions.push(child);
     } else if (child.name === potString) {
-      child.material = potMaterial;
-      additions.push(child);
+      // child.material = potMaterial;
+      // additions.push(child);
     } else if (child.name === mugString) {
       child.material = mugMaterial;
+      mug = child;
       additions.push(child);
     }
   });
 
   additions.forEach(addition => {
     scene.add(addition);
+    draggableMeshs.push(addition);
     allMeshs.push(addition);
   });
 });
 
+/*
+ * Physics
+ */
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+const defaultMaterial = new CANNON.Material('default')
+const defaultContactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial,
+    defaultMaterial,
+    {
+        friction: 0.2,
+        restitution: 0.01
+    }
+)
+world.addContactMaterial(defaultContactMaterial);
+
+// Mug
+// const mugShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
+const mugShape = new CANNON.Cylinder(.175, .175, .2, 12);
+const mugBody = new CANNON.Body({
+  mass: 1,
+  position: new CANNON.Vec3(2.8, 1.879, 1.7645),
+  shape: mugShape,
+  material: defaultMaterial
+});
+mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
+world.addBody(mugBody);
+
+// Desk
+const deskShape = new CANNON.Plane();
+const deskBody = new CANNON.Body();
+deskBody.mass = 0;
+deskBody.addShape(deskShape);
+deskBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
+deskBody.position.y = .775;
+deskBody.material = defaultMaterial;
+world.addBody(deskBody);
+
 /**
  * Animate
  */
-const clock = new THREE.Clock();
-
 const lerp = (start, end, amt) => {
   return (1 - amt) * start + amt * end;
 }
 
+const clock = new THREE.Clock();
+let oldElapsedTime = 0;
+
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime
+  oldElapsedTime = elapsedTime
 
   // Update controls
   controls.update(elapsedTime);
+
+  // Update physics
+  world.step(1 / 60, deltaTime, 3);
+
+  if (mug && mugBody) {
+    mug.position.copy(mugBody.position);
+    mug.quaternion.copy(mugBody.quaternion);
+    mug.rotateOnAxis(new CANNON.Vec3(1, 0, 0), Math.PI * 0.5)
+  }
 
   // Render through the effect composer
   effectComposer.render();
