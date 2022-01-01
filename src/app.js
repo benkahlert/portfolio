@@ -4,7 +4,7 @@ import CANNON from 'cannon'
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { gltfLoader, textureLoader } from './loaders';
+import { gltfLoader } from './loaders';
 
 import {
   bakedDeskMaterial,
@@ -15,6 +15,14 @@ import {
   plantMaterial,
   mugMaterial,
 } from './materials';
+import {
+  configureDeskObject,
+  configureWallObject,
+  configureMonitorFaceObject,
+  configureMonitorObject,
+  configurePropsObject,
+  configureKeyObject
+} from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
@@ -139,24 +147,11 @@ let keysMouseOver = []; // Array for raycaster intersect results
 const keyData = {} // Used to keep track of key positions so that they can animate correctly
 
 /*
- * Adding things into the scene
+ * Event listeners
  */
-addLights();
+let draggingMesh = undefined;
 
-/*
- * Add images on the computer monitor
- */
-const githubImage = addImage(Images.Github);
-images.push(githubImage);
-scene.add(githubImage);
-const linkedinImage = addImage(Images.LinkedIn);
-images.push(linkedinImage);
-scene.add(linkedinImage);
-const resumeImage = addImage(Images.Resume);
-images.push(resumeImage);
-scene.add(resumeImage);
-
-function onPointerMove( event ) {
+document.addEventListener('mousemove', (event) => {
   // Mouse pointer calculations
   mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
   mouse.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -172,14 +167,9 @@ function onPointerMove( event ) {
   draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
 
   if (draggingMesh) {
-    console.log(diff);
     mugBody.applyForce(new CANNON.Vec3((mouse.pointer.x - mouse.lastPointer.x) * 200, (mouse.pointer.y - mouse.lastPointer.y) * 65, 0), mugBody.position);
   }
-}
-
-document.addEventListener('mousemove', onPointerMove);
-
-let draggingMesh = undefined;
+});
 
 document.addEventListener('mousedown', () => {
   // If mouse is over an image when clicked
@@ -202,38 +192,64 @@ document.addEventListener('mousedown', () => {
 
 document.addEventListener('mouseup', () => {
   draggingMesh = undefined;
-})
+});
+
+/*
+ * Adding things into the scene
+ */
+addLights();
+
+/*
+ * Add images on the computer monitor
+ */
+const githubImage = addImage(Images.Github);
+images.push(githubImage);
+scene.add(githubImage);
+const linkedinImage = addImage(Images.LinkedIn);
+images.push(linkedinImage);
+scene.add(linkedinImage);
+const resumeImage = addImage(Images.Resume);
+images.push(resumeImage);
+scene.add(resumeImage);
+
+/* 
+ * Loading functions
+ */
+const loadDeskScene = () => {
+  gltfLoader.load('./desk_scene.glb', gltf => {
+    gltf.scene.traverse(child => {
+      // Desk
+      if (child.name.includes(names.desk)) {
+        // Wall
+        if (child.name.includes(names.wall)) {
+          configureWallObject(child);
+        }
+        configureDeskObject(child);
+      } else if (child.name.includes(names.monitor)) {
+        // Monitor
+        if (child.name === names.monitorFace)
+          configureMonitorFaceObject(child);
+        else
+          configureMonitorObject(child);
+      } else {
+        // Props
+        configurePropsObject(child);
+      }
+  
+      // Keys
+      if (child.name.includes(names.key) && !child.name.includes(names.keyboardBase)) {
+        configureKeyObject(child, keys, keyData);
+      }
+    });
+  
+    scene.add(gltf.scene);
+  });
+}
 
 /**
- * Scene
+ * Loading
  */
-gltfLoader.load('./desk_scene.glb', gltf => {
-  gltf.scene.traverse(child => {
-    if (child.name.includes(names.desk)) {
-      if (child.name.includes('Wall')) {
-        child.scale.x *= 2;
-        child.position.z = child.position.z + 1;
-      }
-      child.material = bakedDeskMaterial;
-    } else if (child.name.includes(names.monitor)) {
-      if (child.name === 'MonitorFace') {
-        child.material = monitorWallpaperMaterial;
-      } else {
-        child.material = bakedMonitorMaterial;
-      }
-    } else {
-      child.material = bakedPropsMaterial;
-    }
-
-    if (child.name.includes('Key') && !child.name.includes('KeyboardBase')) {
-      keyData[child.name] = child.position.y;
-      child.material = bakedPropsMaterial;
-      keys.push(child);
-    }
-  });
-
-  scene.add(gltf.scene);
-});
+loadDeskScene(scene);
 
 let mug = null;
 let draggableMeshs = [];
@@ -354,11 +370,10 @@ const tick = () => {
   });
 
   // Change pointer styling
-  if (mouseShouldBePointer) {
+  if (mouseShouldBePointer)
     document.body.style.cursor = 'pointer';
-  } else if (document.body.style.cursor === 'pointer') {
+  else if (document.body.style.cursor === 'pointer')
     document.body.style.cursor = 'auto';
-  }
 };
 
 tick();
