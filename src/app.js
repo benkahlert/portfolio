@@ -9,16 +9,24 @@ import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
+import {
+  bakedDeskMaterial,
+  bakedPropsMaterial,
+  bakedMonitorMaterial,
+  monitorWallpaperMaterial,
+  potMaterial,
+  plantMaterial,
+  mugMaterial,
+} from './materials';
 import { addLights } from './lighting';
 import { gltfLoader, textureLoader } from './loaders';
 
-import plantVertexShader from './shaders/portal/vertex.glsl'
-import plantFragmentShader from './shaders/portal/fragment.glsl'
-
+/*
 import * as dat from 'dat.gui';
 const debugObject = {};
 export const gui = new dat.GUI();
 gui.hide();
+*/
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -89,49 +97,6 @@ effectComposer.setSize(sizes.width, sizes.height);
 
 const renderPass = new RenderPass(scene, camera);
 effectComposer.addPass(renderPass);
-
-// Textures
-const bakedDeskSceneTexture = textureLoader.load('./textures/desksceneblue.jpg');
-bakedDeskSceneTexture.flipY = false;
-bakedDeskSceneTexture.encoding = THREE.sRGBEncoding;
-
-const bakedDeskPropsTexture = textureLoader.load('./textures/deskpropsnewerkeys.jpg');
-bakedDeskPropsTexture.flipY = false;
-bakedDeskPropsTexture.encoding = THREE.sRGBEncoding;
-
-const bakedMonitorTexture = textureLoader.load('./textures/monitor.jpg');
-bakedMonitorTexture.flipY = false;
-bakedMonitorTexture.encoding = THREE.sRGBEncoding;
-
-const bakedPhysicsObjectsTexture = textureLoader.load('./textures/desk_physics_objects.jpg');
-bakedPhysicsObjectsTexture.flipY = false;
-bakedPhysicsObjectsTexture.encoding = THREE.sRGBEncoding;
-
-const monitorFaceTexture = textureLoader.load('./images/wallpaper.jpg');
-monitorFaceTexture.repeat.set(2, 2);
-monitorFaceTexture.offset.set(-.5, -.5);
-
-// Materials
-const deskSceneBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedDeskSceneTexture });
-const deskPropsBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedDeskPropsTexture });
-
-const deskMonitorBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedMonitorTexture });
-const monitorFaceMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFEE, map: monitorFaceTexture, emissive: 0x222222 });
-const deskPhysicsObjectsBakedMaterial = new THREE.MeshBasicMaterial({ map: bakedPhysicsObjectsTexture });
-
-// Plant materials
-const potMaterial = new THREE.MeshStandardMaterial({ color: 0x8F452E });
-const plantMaterial = new THREE.MeshStandardMaterial({ color: 0x5CC15F });
-
-const plantShaderMaterial = new THREE.ShaderMaterial({
-  vertexShader: plantVertexShader,
-  fragmentShader: plantFragmentShader,
-});
-
-// Mug materials
-const mugMaterial = new THREE.MeshStandardMaterial({ color: 0xB6B1AC });
-
-const keyMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFEE });
 
 const deskSceneString = 'DeskScene';
 const monitorString = 'Monitor';
@@ -285,21 +250,21 @@ gltfLoader.load('./desk_scene.glb', gltf => {
         child.scale.x *= 2;
         child.position.z = child.position.z + 1;
       }
-      child.material = deskSceneBakedMaterial;
+      child.material = bakedDeskMaterial;
     } else if (child.name.includes(monitorString)) {
       if (child.name === 'MonitorFace') {
-        child.material = monitorFaceMaterial;
+        child.material = monitorWallpaperMaterial;
       } else {
-        child.material = deskMonitorBakedMaterial;
+        child.material = bakedMonitorMaterial;
       }
     } else {
-      child.material = deskPropsBakedMaterial;
+      child.material = bakedPropsMaterial;
     }
 
     if (child.name.includes('Key') && !child.name.includes('KeyboardBase')) {
       keyPositionMap[child.name] = new THREE.Vector3(child.position.x, child.position.y, child.position.z);
       keyMeshs.push(child);
-      child.material = deskPropsBakedMaterial;
+      child.material = bakedPropsMaterial;
     }
   });
 
