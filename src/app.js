@@ -85,6 +85,7 @@ scene.add(camera);
 const controls = new FlyControls(camera, canvas);
 controls.movementSpeed = 0;
 controls.rollSpeed = 0;
+// controls.dragToLook = true
 
 /**
  * Renderer
@@ -166,14 +167,14 @@ document.addEventListener('mousemove', (event) => {
   if (draggingMesh) {
     const horizontalMultiplier = 3000;
     const verticalMultiplier = 1500;
-    const maxForce = 1.5;
+    const maxForce = 1.2;
 
     const horizontalForce = diff.x * horizontalMultiplier;
     const verticalForce = diff.y * verticalMultiplier;
     const horizontalMagnitude = Math.min(Math.abs(diff.x * horizontalMultiplier), maxForce);
-    const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce);
+    const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce / 1.5);
 
-    mugBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), verticalMagnitude * Math.sign(verticalForce), 0), mugBody.position);
+    mugBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), (verticalMagnitude + (horizontalMagnitude * .25)) * Math.sign(verticalForce), 0), mugBody.position);
   }
 });
 
@@ -300,7 +301,7 @@ world.gravity.set(0, -9.82, 0);
 // world.addContactMaterial(defaultContactMaterial);
 
 // Mug
-// const mugShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
+// co  nst mugShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
 const mugShape = new CANNON.Cylinder(.16, .16, .3, 20);
 const handleShape = new CANNON.Box(new CANNON.Vec3(.1, .025, .12));
 const mugPosition = new CANNON.Vec3(2.8, 1.879, 1.7645);
@@ -315,25 +316,170 @@ mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(mugBody);
 
 // Desk
-const deskShape = new CANNON.Box(new CANNON.Vec3(2.3, 0.02, 0.88));
+const deskShape = new CANNON.Box(new CANNON.Vec3(2.45, 0.02, 0.95));
 const deskBody = new CANNON.Body({
   mass: 0,
-  position: new CANNON.Vec3(1.3, .78, 1.8),
+  position: new CANNON.Vec3(1.25, .71, 1.6),
   shape: deskShape,
 });
-deskBody.KINEMATIC = true;
 // deskBody.material = defaultMaterial;
 world.addBody(deskBody);
 
+// Mat
+const matShape = new CANNON.Box(new CANNON.Vec3(.99, 0.01, 0.57));
+const matBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.31, .75, 1.8),
+  shape: matShape,
+});
+// deskBody.material = defaultMaterial;
+world.addBody(matBody);
+
 // const positionFolder = gui.addFolder('position');
-// positionFolder.add(deskBody.position, 'x');
-// positionFolder.add(deskBody.position, 'y');
-// positionFolder.add(deskBody.position, 'z');
+// positionFolder.add(matBody.position, 'x');
+// positionFolder.add(matBody.position, 'y');
+// positionFolder.add(matBody.position, 'z');
 
 // const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(deskShape.halfExtents, 'x');
-// scaleFolder.add(deskShape.halfExtents, 'y');
-// scaleFolder.add(deskShape.halfExtents, 'z');
+// scaleFolder.add(matShape.halfExtents, 'x');
+// scaleFolder.add(matShape.halfExtents, 'y');
+// scaleFolder.add(matShape.halfExtents, 'z');
+
+// Keyboard
+const keyboardShape = new CANNON.Box(new CANNON.Vec3(.45, 0.04, 0.17));
+const keyboardBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(.98, .8, 2.075),
+  shape: keyboardShape,
+});
+keyboardBody.quaternion.y = .025;
+// deskBody.material = defaultMaterial;
+world.addBody(keyboardBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(keyboardBody.position, 'x');
+// positionFolder.add(keyboardBody.position, 'y');
+// positionFolder.add(keyboardBody.position, 'z');
+
+// const rotationFolder = gui.addFolder('rotation');
+// rotationFolder.add(keyboardBody.quaternion, 'x');
+// rotationFolder.add(keyboardBody.quaternion, 'y');
+// rotationFolder.add(keyboardBody.quaternion, 'z');
+
+// const scaleFolder = gui.addFolder('scale');
+// scaleFolder.add(keyboardShape.halfExtents, 'x');
+// scaleFolder.add(keyboardShape.halfExtents, 'y');
+// scaleFolder.add(keyboardShape.halfExtents, 'z');
+
+// Trackpad
+const trackpadShape = new CANNON.Box(new CANNON.Vec3(.27, 0.023, 0.27));
+const trackpadBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.9, .785, 2.05),
+  shape: trackpadShape,
+});
+trackpadBody.quaternion.y = -.05;
+// deskBody.material = defaultMaterial;
+world.addBody(trackpadBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(trackpadBody.position, 'x');
+// positionFolder.add(trackpadBody.position, 'y');
+// positionFolder.add(trackpadBody.position, 'z');
+
+// const rotationFolder = gui.addFolder('rotation');
+// rotationFolder.add(trackpadBody.quaternion, 'x');
+// rotationFolder.add(trackpadBody.quaternion, 'y');
+// rotationFolder.add(trackpadBody.quaternion, 'z');
+
+// const scaleFolder = gui.addFolder('scale');
+// scaleFolder.add(trackpadShape.halfExtents, 'x');
+// scaleFolder.add(trackpadShape.halfExtents, 'y');
+// scaleFolder.add(trackpadShape.halfExtents, 'z');
+
+// Monitor base
+const monitorBaseShape = new CANNON.Cylinder(.3, .3, .05, 20);
+const monitorBaseBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.35, .74, 1),
+  shape: monitorBaseShape,
+});
+monitorBaseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
+// deskBody.material = defaultMaterial;
+world.addBody(monitorBaseBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(monitorBaseBody.position, 'x');
+// positionFolder.add(monitorBaseBody.position, 'y');
+// positionFolder.add(monitorBaseBody.position, 'z');
+
+// Monitor stand
+const monitorStandShape = new CANNON.Cylinder(.07, .07, .25, 20);
+const monitorStandBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.35, .92, 1.02),
+  shape: monitorStandShape,
+});
+monitorStandBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
+// deskBody.material = defaultMaterial;
+world.addBody(monitorStandBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(monitorStandBody.position, 'x');
+// positionFolder.add(monitorStandBody.position, 'y');
+// positionFolder.add(monitorStandBody.position, 'z');
+
+// Monitor
+const monitorShape = new CANNON.Box(new CANNON.Vec3(.85, 0.06, 0.53));
+const monitorBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.35, 1.55, 1.19),
+  shape: monitorShape,
+});
+monitorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
+// deskBody.material = defaultMaterial;
+world.addBody(monitorBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(monitorBody.position, 'x');
+// positionFolder.add(monitorBody.position, 'y');
+// positionFolder.add(monitorBody.position, 'z');
+
+// const rotationFolder = gui.addFolder('rotation');
+// rotationFolder.add(trackpadBody.quaternion, 'x');
+// rotationFolder.add(trackpadBody.quaternion, 'y');
+// rotationFolder.add(trackpadBody.quaternion, 'z');
+
+// const scaleFolder = gui.addFolder('scale');
+// scaleFolder.add(monitorShape.halfExtents, 'x');
+// scaleFolder.add(monitorShape.halfExtents, 'y');
+// scaleFolder.add(monitorShape.halfExtents, 'z');
+
+// Notebook
+const notebookShape = new CANNON.Box(new CANNON.Vec3(-.33, 0.025, 0.47));
+const notebookBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(-.55, .77, 1.6),
+  shape: notebookShape,
+});
+notebookBody.quaternion.y = .1;
+// deskBody.material = defaultMaterial;
+world.addBody(notebookBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(notebookBody.position, 'x');
+// positionFolder.add(notebookBody.position, 'y');
+// positionFolder.add(notebookBody.position, 'z');
+
+// const rotationFolder = gui.addFolder('rotation');
+// rotationFolder.add(notebookBody.quaternion, 'x');
+// rotationFolder.add(notebookBody.quaternion, 'y');
+// rotationFolder.add(notebookBody.quaternion, 'z');
+
+// const scaleFolder = gui.addFolder('scale');
+// scaleFolder.add(notebookShape.halfExtents, 'x');
+// scaleFolder.add(notebookShape.halfExtents, 'y');
+// scaleFolder.add(notebookShape.halfExtents, 'z');
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -362,8 +508,8 @@ const tick = () => {
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 
-  camera.rotation.y = -(mouse.position.x - .5) / 40;
-  camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
+  // camera.rotation.y = -(mouse.position.x - .5) / 40;
+  // camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
 
   let mouseShouldBePointer = false;
 
