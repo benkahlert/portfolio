@@ -20,7 +20,7 @@ import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 import { lerp } from './helpers';
-import CannonDebugger from 'cannon-es-debugger';
+import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies } from './physics';
 
 import * as dat from 'dat.gui';
 export const gui = new dat.GUI();
@@ -296,123 +296,15 @@ scene.add(resumeImage);
  */
 loadDeskScene();
 loadProps();
+const world = createWorld(scene);
+const cannonDebugRenderer = createCannonDebugRenderer(scene, world);
 
 /*
  * Physics
  */
-const world = new CANNON.World();
-const cannonDebugRenderer = new CannonDebugger(scene, world);
-world.gravity.set(0, -9.82, 0);
-// const defaultMaterial = new CANNON.Material('default')
-// const defaultContactMaterial = new CANNON.ContactMaterial(
-//     defaultMaterial,
-//     defaultMaterial,
-//     {
-//         friction: 0.2,
-//         restitution: 0.01
-//     }
-// )
-// world.addContactMaterial(defaultContactMaterial);
-
-// Mug
-const mugShape = new CANNON.Cylinder(.16, .16, .3, 20);
-const handleShape = new CANNON.Box(new CANNON.Vec3(.1, .025, .12));
-const mugBody = new CANNON.Body({
-  mass: 1,
-  position: new CANNON.Vec3(2.8, 1.879, 1.7645),
-  shape: mugShape,
-});
-mugBody.addShape(handleShape, new CANNON.Vec3(-.175, 0, 0));
-mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-world.addBody(mugBody);
-
-// Pencil
-const pencilShape = new CANNON.Cylinder(.025, .025, .54, 8);
-const pencilBody = new CANNON.Body({
-  mass: .75,
-  position: new CANNON.Vec3(.12, .76, 1.9),
-  shape: pencilShape,
-});
-pencilBody.quaternion.y = -.165;
-world.addBody(pencilBody);
-
-// Desk
-const deskShape = new CANNON.Box(new CANNON.Vec3(2.45, 0.02, 0.95));
-const deskBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.25, .71, 1.6),
-  shape: deskShape,
-});
-world.addBody(deskBody);
-
-// Mat
-const matShape = new CANNON.Box(new CANNON.Vec3(.99, 0.01, 0.57));
-const matBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.31, .75, 1.8),
-  shape: matShape,
-});
-world.addBody(matBody);
-
-// Keyboard
-const keyboardShape = new CANNON.Box(new CANNON.Vec3(.45, 0.04, 0.17));
-const keyboardBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(.98, .8, 2.075),
-  shape: keyboardShape,
-});
-keyboardBody.quaternion.y = .025;
-world.addBody(keyboardBody);
-
-// Trackpad
-const trackpadShape = new CANNON.Box(new CANNON.Vec3(.27, 0.023, 0.27));
-const trackpadBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.9, .785, 2.05),
-  shape: trackpadShape,
-});
-trackpadBody.quaternion.y = -.05;
-world.addBody(trackpadBody);
-
-// Monitor base
-const monitorBaseShape = new CANNON.Cylinder(.3, .3, .05, 20);
-const monitorBaseBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.35, .74, 1),
-  shape: monitorBaseShape,
-});
-monitorBaseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-world.addBody(monitorBaseBody);
-
-// Monitor stand
-const monitorStandShape = new CANNON.Cylinder(.07, .07, .25, 20);
-const monitorStandBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.35, .92, 1.02),
-  shape: monitorStandShape,
-});
-monitorStandBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-world.addBody(monitorStandBody);
-
-// Monitor
-const monitorShape = new CANNON.Box(new CANNON.Vec3(.85, 0.06, 0.53));
-const monitorBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(1.35, 1.55, 1.19),
-  shape: monitorShape,
-});
-monitorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-world.addBody(monitorBody);
-
-// Notebook
-const notebookShape = new CANNON.Box(new CANNON.Vec3(.33, 0.025, 0.47));
-const notebookBody = new CANNON.Body({
-  mass: 0,
-  position: new CANNON.Vec3(-.55, .77, 1.6),
-  shape: notebookShape,
-});
-notebookBody.quaternion.y = .1;
-world.addBody(notebookBody);
+createKinematicBodies(world);
+const mugBody = createMugBody(world);
+const pencilBody = createPencilBody(world);
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
