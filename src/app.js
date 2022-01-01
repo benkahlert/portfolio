@@ -95,7 +95,7 @@ const bakedDeskSceneTexture = textureLoader.load('./textures/desksceneblue.jpg')
 bakedDeskSceneTexture.flipY = false;
 bakedDeskSceneTexture.encoding = THREE.sRGBEncoding;
 
-const bakedDeskPropsTexture = textureLoader.load('./textures/deskpropsnewkeys.jpg');
+const bakedDeskPropsTexture = textureLoader.load('./textures/deskpropsnewerkeys.jpg');
 bakedDeskPropsTexture.flipY = false;
 bakedDeskPropsTexture.encoding = THREE.sRGBEncoding;
 
@@ -107,7 +107,7 @@ const bakedPhysicsObjectsTexture = textureLoader.load('./textures/desk_physics_o
 bakedPhysicsObjectsTexture.flipY = false;
 bakedPhysicsObjectsTexture.encoding = THREE.sRGBEncoding;
 
-const monitorFaceTexture = textureLoader.load('./textures/images/wallpaper.jpg');
+const monitorFaceTexture = textureLoader.load('./images/wallpaper.jpg');
 monitorFaceTexture.repeat.set(2, 2);
 monitorFaceTexture.offset.set(-.5, -.5);
 
@@ -143,15 +143,15 @@ const allMeshs = [];
 
 // Computer images
 const computerImagePositions = {
-  './textures/images/github.png': { 
+  './images/github.png': { 
     position: new THREE.Vector3(.95, 1.75, 1.25),
     scale: .3,
   },
-  './textures/images/linkedin.png': {
+  './images/linkedin.png': {
     position: new THREE.Vector3(1.75, 1.75, 1.25),
     scale: .3,
   },
-  './textures/images/resume.png': {
+  './images/resume.png': {
     position: new THREE.Vector3(1.325, 1.35, 1.25),
     scale: .4,
   },
@@ -216,24 +216,24 @@ document.addEventListener('mousemove', onPointerMove);
 
 const imageMeshs = [];
 let imageMeshIntersects = [];
-imageMeshs.push(addComputerImage('./textures/images/github.png'));
-imageMeshs.push(addComputerImage('./textures/images/linkedin.png'));
-imageMeshs.push(addComputerImage('./textures/images/resume.png'));
+imageMeshs.push(addComputerImage('./images/github.png'));
+imageMeshs.push(addComputerImage('./images/linkedin.png'));
+imageMeshs.push(addComputerImage('./images/resume.png'));
 
 const getRandomInt = (max) => {
   return Math.floor(Math.random() * max);
 }
 
 const imageMap = {
-  './textures/images/github.png': {
+  './images/github.png': {
     rotation: getRandomInt(2) / 10 - .1,
     offset: getRandomInt(100),
   },
-  './textures/images/linkedin.png': {
+  './images/linkedin.png': {
     rotation: getRandomInt(2) / 10 - .1,
     offset: getRandomInt(100),
   },
-  './textures/images/resume.png': {
+  './images/resume.png': {
     rotation: getRandomInt(2) / 10 - .1,
     offset: getRandomInt(100),
   },
