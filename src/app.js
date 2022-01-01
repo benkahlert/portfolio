@@ -18,6 +18,7 @@ import {
 import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
+import { lerp } from './helpers';
 
 /*
 import * as dat from 'dat.gui';
@@ -303,13 +304,6 @@ deskBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 deskBody.position.y = .775;
 deskBody.material = defaultMaterial;
 world.addBody(deskBody);
-
-/**
- * Animate
- */
-const lerp = (start, end, amt) => {
-  return (1 - amt) * start + amt * end;
-}
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;

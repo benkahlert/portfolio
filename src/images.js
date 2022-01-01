@@ -1,5 +1,6 @@
 import { PlaneGeometry, Mesh, MeshLambertMaterial, Vector3 } from "three";
 import { textureLoader } from "./loaders";
+import { getRandomImageRotationOffset, getRandomImageTimeOffset } from "./helpers";
 
 // Functions as an enum
 export const Images = {
@@ -21,22 +22,22 @@ export const imageData = {
     position: new Vector3(.95, 1.75, 1.25),
     scale: .3,
     path: './images/github.png',
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
+    rotation: getRandomImageRotationOffset(),
+    offset: getRandomImageTimeOffset(),
   },
   [Images.LinkedIn]: {
     position: new Vector3(1.75, 1.75, 1.25),
     scale: .3,
     path: './images/linkedin.png',
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
+    rotation: getRandomImageRotationOffset(),
+    offset: getRandomImageTimeOffset(),
   },
   [Images.Resume]: {
     position: new Vector3(1.325, 1.35, 1.25),
     scale: .4,
     path: './images/resume.png',
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
+    rotation: getRandomImageRotationOffset(),
+    offset: getRandomImageTimeOffset(),
   },
 }
 
