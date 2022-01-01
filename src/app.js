@@ -7,15 +7,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { gltfLoader } from './loaders';
 
 import {
-  bakedDeskMaterial,
-  bakedPropsMaterial,
-  bakedMonitorMaterial,
-  monitorWallpaperMaterial,
-  potMaterial,
-  plantMaterial,
-  mugMaterial,
-} from './materials';
-import {
   configureDeskObject,
   configureWallObject,
   configureMonitorFaceObject,
@@ -30,13 +21,12 @@ import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 import { lerp } from './helpers';
+import CannonDebugger from 'cannon-es-debugger';
 
-/*
 import * as dat from 'dat.gui';
 const debugObject = {};
 export const gui = new dat.GUI();
-gui.hide();
-*/
+// gui.hide();
 
 
 /**
@@ -174,7 +164,16 @@ document.addEventListener('mousemove', (event) => {
   draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
 
   if (draggingMesh) {
-    mugBody.applyForce(new CANNON.Vec3((mouse.pointer.x - mouse.lastPointer.x) * 200, (mouse.pointer.y - mouse.lastPointer.y) * 65, 0), mugBody.position);
+    const horizontalMultiplier = 3000;
+    const verticalMultiplier = 1500;
+    const maxForce = 1.5;
+
+    const horizontalForce = diff.x * horizontalMultiplier;
+    const verticalForce = diff.y * verticalMultiplier;
+    const horizontalMagnitude = Math.min(Math.abs(diff.x * horizontalMultiplier), maxForce);
+    const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce);
+
+    mugBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), verticalMagnitude * Math.sign(verticalForce), 0), mugBody.position);
   }
 });
 
@@ -287,39 +286,54 @@ loadProps();
  * Physics
  */
 const world = new CANNON.World();
+const cannonDebugRenderer = new CannonDebugger(scene, world);
 world.gravity.set(0, -9.82, 0);
-const defaultMaterial = new CANNON.Material('default')
-const defaultContactMaterial = new CANNON.ContactMaterial(
-    defaultMaterial,
-    defaultMaterial,
-    {
-        friction: 0.2,
-        restitution: 0.01
-    }
-)
-world.addContactMaterial(defaultContactMaterial);
+// const defaultMaterial = new CANNON.Material('default')
+// const defaultContactMaterial = new CANNON.ContactMaterial(
+//     defaultMaterial,
+//     defaultMaterial,
+//     {
+//         friction: 0.2,
+//         restitution: 0.01
+//     }
+// )
+// world.addContactMaterial(defaultContactMaterial);
 
 // Mug
 // const mugShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
-const mugShape = new CANNON.Cylinder(.175, .175, .2, 12);
+const mugShape = new CANNON.Cylinder(.16, .16, .3, 20);
+const handleShape = new CANNON.Box(new CANNON.Vec3(.1, .025, .12));
+const mugPosition = new CANNON.Vec3(2.8, 1.879, 1.7645);
 const mugBody = new CANNON.Body({
   mass: 1,
-  position: new CANNON.Vec3(2.8, 1.879, 1.7645),
+  position: mugPosition,
   shape: mugShape,
-  material: defaultMaterial
+  // material: defaultMaterial
 });
+mugBody.addShape(handleShape, new CANNON.Vec3(-.175, 0, 0));
 mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(mugBody);
 
 // Desk
-const deskShape = new CANNON.Plane();
-const deskBody = new CANNON.Body();
-deskBody.mass = 0;
-deskBody.addShape(deskShape);
-deskBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-deskBody.position.y = .775;
-deskBody.material = defaultMaterial;
+const deskShape = new CANNON.Box(new CANNON.Vec3(2.3, 0.02, 0.88));
+const deskBody = new CANNON.Body({
+  mass: 0,
+  position: new CANNON.Vec3(1.3, .78, 1.8),
+  shape: deskShape,
+});
+deskBody.KINEMATIC = true;
+// deskBody.material = defaultMaterial;
 world.addBody(deskBody);
+
+// const positionFolder = gui.addFolder('position');
+// positionFolder.add(deskBody.position, 'x');
+// positionFolder.add(deskBody.position, 'y');
+// positionFolder.add(deskBody.position, 'z');
+
+// const scaleFolder = gui.addFolder('scale');
+// scaleFolder.add(deskShape.halfExtents, 'x');
+// scaleFolder.add(deskShape.halfExtents, 'y');
+// scaleFolder.add(deskShape.halfExtents, 'z');
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -343,6 +357,7 @@ const tick = () => {
 
   // Render through the effect composer
   effectComposer.render();
+  cannonDebugRenderer.update();
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
