@@ -1,3 +1,4 @@
+import { Vector3 } from 'three';
 import {
   bakedDeskMaterial,
   bakedPropsMaterial,
@@ -5,8 +6,14 @@ import {
   monitorWallpaperMaterial,
   plantMaterial,
   potMaterial,
-  mugMaterial
+  mugMaterial,
+  pencilMiddleMaterial,
+  pencilLeadMaterial,
+  pencilWoodMaterial,
+  pencilHolderMaterial,
+  pencilEraserMaterial,
 } from './materials';
+import names from './identifiers';
 
 export const configureDeskObject = (obj) => {
   obj.material = bakedDeskMaterial;
@@ -52,5 +59,15 @@ export const configureRubicksCubeObject = (obj) => {
 }
 
 export const configurePencilObject = (obj) => {
-  
+  if (obj.name === names.pencilMiddle) {
+    obj.material = pencilMiddleMaterial;
+  } else if (obj.name === names.pencilLead) {
+    obj.material = pencilLeadMaterial;
+  } else if (obj.name === names.pencilWood) {
+    obj.material = pencilWoodMaterial;
+  } else if (obj.name === names.pencilHolder) {
+    obj.material = pencilHolderMaterial;
+  } else if (obj.name === names.pencilEraser) {
+    obj.material = pencilEraserMaterial;
+  }
 }

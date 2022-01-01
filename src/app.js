@@ -14,8 +14,7 @@ import {
   configurePropsObject,
   configureKeyObject,
   configureMugObject,
-  configurePotObject,
-  configurePlantObject
+  configurePencilObject,
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
@@ -24,9 +23,7 @@ import { lerp } from './helpers';
 import CannonDebugger from 'cannon-es-debugger';
 
 import * as dat from 'dat.gui';
-const debugObject = {};
 export const gui = new dat.GUI();
-// gui.hide();
 
 
 /**
@@ -83,9 +80,11 @@ scene.add(camera);
 
 // Controls
 const controls = new FlyControls(camera, canvas);
+// controls.movementSpeed = 0.005;
+// controls.rollSpeed = 0.001;
 controls.movementSpeed = 0;
 controls.rollSpeed = 0;
-// controls.dragToLook = true
+// controls.dragToLook = true;
 
 /**
  * Renderer
@@ -140,14 +139,17 @@ const keys = []; // Array for keyboard key meshs
 let keysMouseOver = []; // Array for raycaster intersect results
 const keyData = {} // Used to keep track of key positions so that they can animate correctly
 
-let mug = null;
-let draggableMeshs = [];
-let draggableMeshIntersects = [];
+let pencil = new THREE.Group(); // Pencil physics object
+let mug = undefined; // Mug physics object
+
+let physicsObjects = []; // Array for physics object meshs
+let physicsObjectsMouseOver = []; // Array for physics objects intersect results
+let physicsMeshToBodyMap = {}; // Map that holds each physics mesh's corresponding body
+let currentSelectedPhysicsObject = undefined;
 
 /*
  * Event listeners
  */
-let draggingMesh = undefined;
 
 document.addEventListener('mousemove', (event) => {
   // Mouse pointer calculations
@@ -162,9 +164,12 @@ document.addEventListener('mousemove', (event) => {
   raycaster.setFromCamera(mouse.pointer, camera);
   imagesMouseOver = raycaster.intersectObjects(images, false);
   keysMouseOver = raycaster.intersectObjects(keys, false);
-  draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
+  physicsObjectsMouseOver = raycaster.intersectObjects(physicsObjects, true);
 
-  if (draggingMesh) {
+  if (currentSelectedPhysicsObject) {
+    let objectName = currentSelectedPhysicsObject.object.name;
+    objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
+
     const horizontalMultiplier = 3000;
     const verticalMultiplier = 1500;
     const maxForce = 1.2;
@@ -174,7 +179,9 @@ document.addEventListener('mousemove', (event) => {
     const horizontalMagnitude = Math.min(Math.abs(diff.x * horizontalMultiplier), maxForce);
     const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce / 1.5);
 
-    mugBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), (verticalMagnitude + (horizontalMagnitude * .25)) * Math.sign(verticalForce), 0), mugBody.position);
+    const physicsBody = physicsMeshToBodyMap[objectName];
+
+    physicsBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), (verticalMagnitude + (horizontalMagnitude * .25)) * Math.sign(verticalForce), 0), physicsBody.position);
   }
 });
 
@@ -192,13 +199,13 @@ document.addEventListener('mousedown', () => {
     }
   }
 
-  if (draggableMeshIntersects.length > 0) {
-    draggingMesh = draggableMeshIntersects[0];
+  if (physicsObjectsMouseOver.length > 0) {
+    currentSelectedPhysicsObject = physicsObjectsMouseOver[0];
   }
 });
 
 document.addEventListener('mouseup', () => {
-  draggingMesh = undefined;
+  currentSelectedPhysicsObject = undefined;
 });
 
 /* 
@@ -236,26 +243,33 @@ const loadDeskScene = () => {
 };
 
 const loadProps = () => {
-  gltfLoader.load('./desk_physics_objects.glb', gltf => {
+  gltfLoader.load('./desk_physics_objects_final.glb', gltf => {
     const additions = [];
+    const pencilChildren = []
     gltf.scene.traverse(child => {
-      if (child.name === names.plant) {
-        additions.push(child);
-        configurePlantObject(child);
-      } else if (child.name === names.pot) {
-        additions.push(child);
-        configurePotObject(child);
-      } else if (child.name === names.mug) {
+      if (child.name === names.mug) {
         configureMugObject(child);
         mug = child;
         additions.push(child);
+        physicsMeshToBodyMap[child.name] = mugBody;
+      } else if (child.name.includes(names.pencil)) {
+        configurePencilObject(child);
+        pencilChildren.push(child);
+        physicsMeshToBodyMap[names.pencil] = pencilBody;
       }
     });
   
     additions.forEach(addition => {
       scene.add(addition);
-      draggableMeshs.push(addition);
+      physicsObjects.push(addition);
     });
+
+    pencilChildren.forEach(pencilChild => {
+      pencil.attach(pencilChild);
+    });
+    scene.add(pencil);
+    physicsObjects.push(pencil);
+    pencil.name = names.pencil;
   });
 }
 
@@ -301,19 +315,26 @@ world.gravity.set(0, -9.82, 0);
 // world.addContactMaterial(defaultContactMaterial);
 
 // Mug
-// co  nst mugShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
 const mugShape = new CANNON.Cylinder(.16, .16, .3, 20);
 const handleShape = new CANNON.Box(new CANNON.Vec3(.1, .025, .12));
-const mugPosition = new CANNON.Vec3(2.8, 1.879, 1.7645);
 const mugBody = new CANNON.Body({
   mass: 1,
-  position: mugPosition,
+  position: new CANNON.Vec3(2.8, 1.879, 1.7645),
   shape: mugShape,
-  // material: defaultMaterial
 });
 mugBody.addShape(handleShape, new CANNON.Vec3(-.175, 0, 0));
 mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(mugBody);
+
+// Pencil
+const pencilShape = new CANNON.Cylinder(.025, .025, .54, 8);
+const pencilBody = new CANNON.Body({
+  mass: .75,
+  position: new CANNON.Vec3(.12, .76, 1.9),
+  shape: pencilShape,
+});
+pencilBody.quaternion.y = -.165;
+world.addBody(pencilBody);
 
 // Desk
 const deskShape = new CANNON.Box(new CANNON.Vec3(2.45, 0.02, 0.95));
@@ -322,7 +343,6 @@ const deskBody = new CANNON.Body({
   position: new CANNON.Vec3(1.25, .71, 1.6),
   shape: deskShape,
 });
-// deskBody.material = defaultMaterial;
 world.addBody(deskBody);
 
 // Mat
@@ -332,18 +352,7 @@ const matBody = new CANNON.Body({
   position: new CANNON.Vec3(1.31, .75, 1.8),
   shape: matShape,
 });
-// deskBody.material = defaultMaterial;
 world.addBody(matBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(matBody.position, 'x');
-// positionFolder.add(matBody.position, 'y');
-// positionFolder.add(matBody.position, 'z');
-
-// const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(matShape.halfExtents, 'x');
-// scaleFolder.add(matShape.halfExtents, 'y');
-// scaleFolder.add(matShape.halfExtents, 'z');
 
 // Keyboard
 const keyboardShape = new CANNON.Box(new CANNON.Vec3(.45, 0.04, 0.17));
@@ -353,23 +362,7 @@ const keyboardBody = new CANNON.Body({
   shape: keyboardShape,
 });
 keyboardBody.quaternion.y = .025;
-// deskBody.material = defaultMaterial;
 world.addBody(keyboardBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(keyboardBody.position, 'x');
-// positionFolder.add(keyboardBody.position, 'y');
-// positionFolder.add(keyboardBody.position, 'z');
-
-// const rotationFolder = gui.addFolder('rotation');
-// rotationFolder.add(keyboardBody.quaternion, 'x');
-// rotationFolder.add(keyboardBody.quaternion, 'y');
-// rotationFolder.add(keyboardBody.quaternion, 'z');
-
-// const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(keyboardShape.halfExtents, 'x');
-// scaleFolder.add(keyboardShape.halfExtents, 'y');
-// scaleFolder.add(keyboardShape.halfExtents, 'z');
 
 // Trackpad
 const trackpadShape = new CANNON.Box(new CANNON.Vec3(.27, 0.023, 0.27));
@@ -379,23 +372,7 @@ const trackpadBody = new CANNON.Body({
   shape: trackpadShape,
 });
 trackpadBody.quaternion.y = -.05;
-// deskBody.material = defaultMaterial;
 world.addBody(trackpadBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(trackpadBody.position, 'x');
-// positionFolder.add(trackpadBody.position, 'y');
-// positionFolder.add(trackpadBody.position, 'z');
-
-// const rotationFolder = gui.addFolder('rotation');
-// rotationFolder.add(trackpadBody.quaternion, 'x');
-// rotationFolder.add(trackpadBody.quaternion, 'y');
-// rotationFolder.add(trackpadBody.quaternion, 'z');
-
-// const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(trackpadShape.halfExtents, 'x');
-// scaleFolder.add(trackpadShape.halfExtents, 'y');
-// scaleFolder.add(trackpadShape.halfExtents, 'z');
 
 // Monitor base
 const monitorBaseShape = new CANNON.Cylinder(.3, .3, .05, 20);
@@ -405,13 +382,7 @@ const monitorBaseBody = new CANNON.Body({
   shape: monitorBaseShape,
 });
 monitorBaseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-// deskBody.material = defaultMaterial;
 world.addBody(monitorBaseBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(monitorBaseBody.position, 'x');
-// positionFolder.add(monitorBaseBody.position, 'y');
-// positionFolder.add(monitorBaseBody.position, 'z');
 
 // Monitor stand
 const monitorStandShape = new CANNON.Cylinder(.07, .07, .25, 20);
@@ -421,13 +392,7 @@ const monitorStandBody = new CANNON.Body({
   shape: monitorStandShape,
 });
 monitorStandBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-// deskBody.material = defaultMaterial;
 world.addBody(monitorStandBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(monitorStandBody.position, 'x');
-// positionFolder.add(monitorStandBody.position, 'y');
-// positionFolder.add(monitorStandBody.position, 'z');
 
 // Monitor
 const monitorShape = new CANNON.Box(new CANNON.Vec3(.85, 0.06, 0.53));
@@ -437,49 +402,17 @@ const monitorBody = new CANNON.Body({
   shape: monitorShape,
 });
 monitorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-// deskBody.material = defaultMaterial;
 world.addBody(monitorBody);
 
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(monitorBody.position, 'x');
-// positionFolder.add(monitorBody.position, 'y');
-// positionFolder.add(monitorBody.position, 'z');
-
-// const rotationFolder = gui.addFolder('rotation');
-// rotationFolder.add(trackpadBody.quaternion, 'x');
-// rotationFolder.add(trackpadBody.quaternion, 'y');
-// rotationFolder.add(trackpadBody.quaternion, 'z');
-
-// const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(monitorShape.halfExtents, 'x');
-// scaleFolder.add(monitorShape.halfExtents, 'y');
-// scaleFolder.add(monitorShape.halfExtents, 'z');
-
 // Notebook
-const notebookShape = new CANNON.Box(new CANNON.Vec3(-.33, 0.025, 0.47));
+const notebookShape = new CANNON.Box(new CANNON.Vec3(.33, 0.025, 0.47));
 const notebookBody = new CANNON.Body({
   mass: 0,
   position: new CANNON.Vec3(-.55, .77, 1.6),
   shape: notebookShape,
 });
 notebookBody.quaternion.y = .1;
-// deskBody.material = defaultMaterial;
 world.addBody(notebookBody);
-
-// const positionFolder = gui.addFolder('position');
-// positionFolder.add(notebookBody.position, 'x');
-// positionFolder.add(notebookBody.position, 'y');
-// positionFolder.add(notebookBody.position, 'z');
-
-// const rotationFolder = gui.addFolder('rotation');
-// rotationFolder.add(notebookBody.quaternion, 'x');
-// rotationFolder.add(notebookBody.quaternion, 'y');
-// rotationFolder.add(notebookBody.quaternion, 'z');
-
-// const scaleFolder = gui.addFolder('scale');
-// scaleFolder.add(notebookShape.halfExtents, 'x');
-// scaleFolder.add(notebookShape.halfExtents, 'y');
-// scaleFolder.add(notebookShape.halfExtents, 'z');
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -499,6 +432,11 @@ const tick = () => {
     mug.position.copy(mugBody.position);
     mug.quaternion.copy(mugBody.quaternion);
     mug.rotateOnAxis(new CANNON.Vec3(1, 0, 0), Math.PI * 0.5)
+  }
+
+  if (pencil && pencilBody) {
+    pencil.position.copy(pencilBody.position);
+    pencil.quaternion.copy(pencilBody.quaternion);
   }
 
   // Render through the effect composer

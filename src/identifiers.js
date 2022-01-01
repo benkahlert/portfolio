@@ -8,4 +8,10 @@ export default {
   wall: 'Wall',
   key: 'Key',
   keyboardBase: 'KeyboardBase',
+  pencil: 'Pencil',
+  pencilMiddle: 'PencilMiddle',
+  pencilHolder: 'PencilHolder',
+  pencilEraser: 'PencilEraser',
+  pencilLead: 'PencilLead',
+  pencilWood: 'PencilWood',
 }
