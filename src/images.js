@@ -12,6 +12,10 @@ const getRandomInt = (max) => {
   return Math.floor(Math.random() * max);
 }
 
+export const githubUrl = 'https://github.com/benkahlert';
+export const linkedinUrl = 'https://www.linkedin.com/in/benjamin-kahlert-0b4709126/';
+export const resumeUrl = 'https://drive.google.com/file/d/1_IaPj3Qc3xBGi2IRy6fqbKvTXUC3qQWS/view?usp=sharing';
+
 export const imageData = {
   [Images.Github]: {
     position: new Vector3(.95, 1.75, 1.25),

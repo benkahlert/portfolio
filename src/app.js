@@ -17,7 +17,7 @@ import {
 } from './materials';
 import names from './identifiers';
 import { addLights } from './lighting';
-import { Images, imageData, addImage } from './images';
+import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 
 /*
 import * as dat from 'dat.gui';
@@ -171,19 +171,12 @@ document.addEventListener('mousemove', onPointerMove);
 const githubImage = addImage(Images.Github);
 images.push(githubImage);
 scene.add(githubImage);
-
 const linkedinImage = addImage(Images.LinkedIn);
 images.push(linkedinImage);
 scene.add(linkedinImage);
-
 const resumeImage = addImage(Images.Resume);
 images.push(resumeImage);
 scene.add(resumeImage);
-
-// Clicking
-const githubUrl = 'https://github.com/benkahlert';
-const linkedinUrl = 'https://www.linkedin.com/in/benjamin-kahlert-0b4709126/';
-const resumeUrl = 'https://drive.google.com/file/d/1_IaPj3Qc3xBGi2IRy6fqbKvTXUC3qQWS/view?usp=sharing';
 
 const keyMeshs = [];
 let keyMeshIntersects = [];
