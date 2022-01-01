@@ -9,7 +9,6 @@ import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
-import { loadGlove, glove, gloveAnimationMixer } from './glove';
 import { addLights } from './lighting';
 import { gltfLoader, textureLoader } from './loaders';
 
@@ -176,7 +175,6 @@ const addComputerImage = (path) => {
 }
 
 addLights();
-// loadGlove(scene, camera, effectComposer);
 
 // Raycaster
 const raycaster = new THREE.Raycaster();
@@ -299,7 +297,7 @@ gltfLoader.load('./desk_scene.glb', gltf => {
     }
 
     if (child.name.includes('Key') && !child.name.includes('KeyboardBase')) {
-      keyPositionMap[child.name] = new THREE.Vector3(child.position.x,child.position.y,child.position.z);
+      keyPositionMap[child.name] = new THREE.Vector3(child.position.x, child.position.y, child.position.z);
       keyMeshs.push(child);
       child.material = deskPropsBakedMaterial;
     }
@@ -406,12 +404,6 @@ const tick = () => {
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 
-  // Update glove animations
-  // TODO: Use delta time here
-  if (gloveAnimationMixer) {
-      gloveAnimationMixer.update(0.01);
-  }
-
   camera.rotation.y = -(mousePosition.x - .5) / 40;
   camera.position.x = 1.5 + (mousePosition.x - .5) / 20;
 
@@ -455,14 +447,12 @@ const tick = () => {
     }
   });
 
-  // Glove rotation
-  if (glove)
-    glove.rotation.y = (mousePosition.x * -1.1) - .75;
-
-  if (pointer)
+  // Change pointer styling
+  if (pointer) {
     document.body.style.cursor = 'pointer';
-  else if (document.body.style.cursor === 'pointer')
+  } else if (document.body.style.cursor === 'pointer') {
     document.body.style.cursor = 'auto';
+  }
 };
 
 tick();
