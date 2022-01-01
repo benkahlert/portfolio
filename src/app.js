@@ -4,6 +4,7 @@ import CANNON from 'cannon'
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { gltfLoader, textureLoader } from './loaders';
 
 import {
   bakedDeskMaterial,
@@ -16,7 +17,7 @@ import {
 } from './materials';
 import names from './identifiers';
 import { addLights } from './lighting';
-import { gltfLoader, textureLoader } from './loaders';
+import { Images, imageData, addImage } from './images';
 
 /*
 import * as dat from 'dat.gui';
@@ -106,6 +107,13 @@ effectComposer.setSize(sizes.width, sizes.height);
 const renderPass = new RenderPass(scene, camera);
 effectComposer.addPass(renderPass);
 
+/*
+ * Raycaster
+ */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let mousePosition = { x: 0, y: 0 };
+
 /**
  * 
  * 
@@ -115,47 +123,14 @@ effectComposer.addPass(renderPass);
  * 
  * 
  */
-const allMeshs = [];
 
-// Computer images
-const computerImagePositions = {
-  './images/github.png': { 
-    position: new THREE.Vector3(.95, 1.75, 1.25),
-    scale: .3,
-  },
-  './images/linkedin.png': {
-    position: new THREE.Vector3(1.75, 1.75, 1.25),
-    scale: .3,
-  },
-  './images/resume.png': {
-    position: new THREE.Vector3(1.325, 1.35, 1.25),
-    scale: .4,
-  },
-}
-
-const addComputerImage = (path) => {
-  const material = new THREE.MeshLambertMaterial({
-    map: textureLoader.load(path),
-    alphaTest: .25,
-  });
-  const scale = computerImagePositions[path].scale;
-  const geometry = new THREE.PlaneGeometry(scale, scale);
-  const mesh = new THREE.Mesh(geometry, material);
-  const position = computerImagePositions[path].position;
-  mesh.name = path;
-  mesh.position.x = position.x;
-  mesh.position.y = position.y;
-  mesh.position.z = position.z;
-  scene.add(mesh);
-  return mesh;
-}
+/*
+ * Variables for keeping track of meshes and interacting with them
+ */
+let images = []; // Array for image meshs
+let imagesMouseOver = []; // Array for raycaster intersect results
 
 addLights();
-
-// Raycaster
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let mousePosition = { x: 0, y: 0 };
 
 function onPointerMove( event ) {
   const oldX = pointer.x;
@@ -169,8 +144,8 @@ function onPointerMove( event ) {
   const diffX = pointer.x - oldX;
   const diffY = pointer.y - oldY;
 
-  raycaster.setFromCamera( pointer, camera );
-  imageMeshIntersects = raycaster.intersectObjects(imageMeshs, false);
+  raycaster.setFromCamera(pointer, camera);
+  imagesMouseOver = raycaster.intersectObjects(images, false);
 
   keyMeshIntersects = [];
   keyMeshs.forEach(keyMesh => {
@@ -190,30 +165,20 @@ function onPointerMove( event ) {
 
 document.addEventListener('mousemove', onPointerMove);
 
-const imageMeshs = [];
-let imageMeshIntersects = [];
-imageMeshs.push(addComputerImage('./images/github.png'));
-imageMeshs.push(addComputerImage('./images/linkedin.png'));
-imageMeshs.push(addComputerImage('./images/resume.png'));
+/*
+ * Add images on the computer monitor
+ */
+const githubImage = addImage(Images.Github);
+images.push(githubImage);
+scene.add(githubImage);
 
-const getRandomInt = (max) => {
-  return Math.floor(Math.random() * max);
-}
+const linkedinImage = addImage(Images.LinkedIn);
+images.push(linkedinImage);
+scene.add(linkedinImage);
 
-const imageMap = {
-  './images/github.png': {
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
-  },
-  './images/linkedin.png': {
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
-  },
-  './images/resume.png': {
-    rotation: getRandomInt(2) / 10 - .1,
-    offset: getRandomInt(100),
-  },
-}
+const resumeImage = addImage(Images.Resume);
+images.push(resumeImage);
+scene.add(resumeImage);
 
 // Clicking
 const githubUrl = 'https://github.com/benkahlert';
@@ -227,13 +192,14 @@ let draggingMesh = undefined;
 
 document.addEventListener('mousedown', () => {
   // If mouse is over an image when clicked
-  if (imageMeshIntersects.length > 0) {
-    const imageMesh = imageMeshIntersects[0];
-    if (imageMesh.object.name.includes('github')) {
+  if (imagesMouseOver.length > 0) {
+    const imageMouseOver = imagesMouseOver[0].object.name;
+
+    if (imageMouseOver === Images.Github) {
       window.open(githubUrl, '_blank')
-    } else if (imageMesh.object.name.includes('linkedin')) {
+    } else if (imageMouseOver === Images.LinkedIn) {
       window.open(linkedinUrl, '_blank')
-    } else if (imageMesh.object.name.includes('resume')) {
+    } else if (imageMouseOver === Images.Resume) {
       window.open(resumeUrl, '_blank')
     }
   }
@@ -252,10 +218,6 @@ document.addEventListener('mouseup', () => {
  */
 gltfLoader.load('./desk_scene.glb', gltf => {
   gltf.scene.traverse(child => {
-    if (child.isMesh) {
-      allMeshs.push(child);
-    }
-    
     if (child.name.includes(names.desk)) {
       if (child.name.includes('Wall')) {
         child.scale.x *= 2;
@@ -305,7 +267,6 @@ gltfLoader.load('./deskphysicsobjects.glb', gltf => {
   additions.forEach(addition => {
     scene.add(addition);
     draggableMeshs.push(addition);
-    allMeshs.push(addition);
   });
 });
 
@@ -403,9 +364,9 @@ const tick = () => {
   });
 
   // Images
-  imageMeshs.forEach(image => {
+  images.forEach(image => {
     let found = false;
-    imageMeshIntersects.forEach(intersect => {
+    imagesMouseOver.forEach(intersect => {
       if (image.name === intersect.object.name) {
         found = true;
         pointer = true;
@@ -419,7 +380,7 @@ const tick = () => {
     } else {
       image.scale.x = lerp(image.scale.x, 1, .2);
       image.scale.y = lerp(image.scale.y, 1, .2);
-      image.rotation.z = lerp(image.rotation.z, imageMap[image.name].rotation + Math.sin(elapsedTime * .5 + imageMap[image.name].offset) * .15, .2);
+      image.rotation.z = lerp(image.rotation.z, imageData[image.name].rotation + Math.sin(elapsedTime * .5 + imageData[image.name].offset) * .15, .2);
     }
   });
 
