@@ -111,8 +111,11 @@ effectComposer.addPass(renderPass);
  * Raycaster
  */
 const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let mousePosition = { x: 0, y: 0 };
+const mouse = {
+  pointer: new THREE.Vector2(),
+  lastPointer: new THREE.Vector2(),
+  position: new THREE.Vector2(),
+};
 
 /**
  * 
@@ -130,21 +133,33 @@ let mousePosition = { x: 0, y: 0 };
 let images = []; // Array for image meshs
 let imagesMouseOver = []; // Array for raycaster intersect results
 
+/*
+ * Adding things into the scene
+ */
 addLights();
 
+/*
+ * Add images on the computer monitor
+ */
+const githubImage = addImage(Images.Github);
+images.push(githubImage);
+scene.add(githubImage);
+const linkedinImage = addImage(Images.LinkedIn);
+images.push(linkedinImage);
+scene.add(linkedinImage);
+const resumeImage = addImage(Images.Resume);
+images.push(resumeImage);
+scene.add(resumeImage);
+
 function onPointerMove( event ) {
-  const oldX = pointer.x;
-  const oldY = pointer.y;
+  mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
+  mouse.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+  mouse.position.x = event.clientX / sizes.width;
+  mouse.position.y = event.clientY / sizes.height;
+  const diff = new THREE.Vector2(mouse.pointer.x - mouse.lastPointer.x, mouse.pointer.y - mouse.lastPointer.y);
 
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-  mousePosition.x = event.clientX / sizes.width;
-  mousePosition.y = event.clientY / sizes.height;
-
-  const diffX = pointer.x - oldX;
-  const diffY = pointer.y - oldY;
-
-  raycaster.setFromCamera(pointer, camera);
+  raycaster.setFromCamera(mouse.pointer, camera);
   imagesMouseOver = raycaster.intersectObjects(images, false);
 
   keyMeshIntersects = [];
@@ -159,24 +174,12 @@ function onPointerMove( event ) {
   draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
 
   if (draggingMesh) {
-    mugBody.applyForce(new CANNON.Vec3(diffX * 200, diffY * 65, 0), mugBody.position);
+    console.log(diff);
+    mugBody.applyForce(new CANNON.Vec3((mouse.pointer.x - mouse.lastPointer.x) * 200, (mouse.pointer.y - mouse.lastPointer.y) * 65, 0), mugBody.position);
   }
 }
 
 document.addEventListener('mousemove', onPointerMove);
-
-/*
- * Add images on the computer monitor
- */
-const githubImage = addImage(Images.Github);
-images.push(githubImage);
-scene.add(githubImage);
-const linkedinImage = addImage(Images.LinkedIn);
-images.push(linkedinImage);
-scene.add(linkedinImage);
-const resumeImage = addImage(Images.Resume);
-images.push(resumeImage);
-scene.add(resumeImage);
 
 const keyMeshs = [];
 let keyMeshIntersects = [];
@@ -334,8 +337,8 @@ const tick = () => {
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 
-  camera.rotation.y = -(mousePosition.x - .5) / 40;
-  camera.position.x = 1.5 + (mousePosition.x - .5) / 20;
+  camera.rotation.y = -(mouse.position.x - .5) / 40;
+  camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
 
   let pointer = false;
 
