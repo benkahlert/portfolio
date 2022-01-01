@@ -131,8 +131,12 @@ const mouse = {
 /*
  * Variables for keeping track of meshes and interacting with them
  */
-let images = []; // Array for image meshs
+const images = []; // Array for image meshs
 let imagesMouseOver = []; // Array for raycaster intersect results
+
+const keys = []; // Array for keyboard key meshs
+let keysMouseOver = []; // Array for raycaster intersect results
+const keyData = {} // Used to keep track of key positions so that they can animate correctly
 
 /*
  * Adding things into the scene
@@ -153,6 +157,7 @@ images.push(resumeImage);
 scene.add(resumeImage);
 
 function onPointerMove( event ) {
+  // Mouse pointer calculations
   mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
   mouse.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -160,18 +165,10 @@ function onPointerMove( event ) {
   mouse.position.y = event.clientY / sizes.height;
   const diff = new THREE.Vector2(mouse.pointer.x - mouse.lastPointer.x, mouse.pointer.y - mouse.lastPointer.y);
 
+  // Raycaster checks
   raycaster.setFromCamera(mouse.pointer, camera);
   imagesMouseOver = raycaster.intersectObjects(images, false);
-
-  keyMeshIntersects = [];
-  keyMeshs.forEach(keyMesh => {
-    if (keyMeshs != undefined) {
-      const intersection = raycaster.intersectObject(keyMesh, false);
-      if (intersection.length > 0)
-        keyMeshIntersects.push(intersection[0]);
-    }
-  });
-
+  keysMouseOver = raycaster.intersectObjects(keys, false);
   draggableMeshIntersects = raycaster.intersectObjects(draggableMeshs, false);
 
   if (draggingMesh) {
@@ -182,9 +179,6 @@ function onPointerMove( event ) {
 
 document.addEventListener('mousemove', onPointerMove);
 
-const keyMeshs = [];
-let keyMeshIntersects = [];
-const keyPositionMap = {};
 let draggingMesh = undefined;
 
 document.addEventListener('mousedown', () => {
@@ -232,9 +226,9 @@ gltfLoader.load('./desk_scene.glb', gltf => {
     }
 
     if (child.name.includes('Key') && !child.name.includes('KeyboardBase')) {
-      keyPositionMap[child.name] = new THREE.Vector3(child.position.x, child.position.y, child.position.z);
-      keyMeshs.push(child);
+      keyData[child.name] = child.position.y;
       child.material = bakedPropsMaterial;
+      keys.push(child);
     }
   });
 
@@ -334,48 +328,33 @@ const tick = () => {
   camera.rotation.y = -(mouse.position.x - .5) / 40;
   camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
 
-  let pointer = false;
+  let mouseShouldBePointer = false;
 
   // Keys
-  keyMeshs.forEach(key => {
-    let found = false;
-    keyMeshIntersects.forEach(intersect => {
-      if (key.name === intersect.object.name) {
-        found = true;
-        pointer = true;
-      }
-    });
-
-    if (found) {
-      key.position.y = lerp(key.position.y, keyPositionMap[key.name].y - .015, .1);
-    } else {
-      key.position.y = lerp(key.position.y, keyPositionMap[key.name].y, .2);
-    }
+  keys.forEach(key => {
+    const keyYPosition = keyData[key.name];
+    const keyObjectsMouseIsOver = keysMouseOver.map(keyMouseIsOver => keyMouseIsOver.object);
+    const y = keyObjectsMouseIsOver.includes(key) ? keyYPosition - .015 : keyYPosition;
+    key.position.y = lerp(key.position.y, y, .15);
   });
 
   // Images
   images.forEach(image => {
-    let found = false;
-    imagesMouseOver.forEach(intersect => {
-      if (image.name === intersect.object.name) {
-        found = true;
-        pointer = true;
-      }
-    });
+    const imageObejctsMouseIsOver = imagesMouseOver.map(imageMouseOver => imageMouseOver.object);
+    const found = imageObejctsMouseIsOver.includes(image);
+    const scale = found ? 1.2 : 1;
+    const rotation = found ? Math.sin(elapsedTime * 2) * .3 : imageData[image.name].rotation + Math.sin(elapsedTime * .5 + imageData[image.name].offset) * .15;
 
-    if (found) {
-      image.scale.x = lerp(image.scale.x, 1.2, .1);
-      image.scale.y = lerp(image.scale.y, 1.2, .1);
-      image.rotation.z = lerp(image.rotation.z, Math.sin(elapsedTime * 2) * .3, .2);
-    } else {
-      image.scale.x = lerp(image.scale.x, 1, .2);
-      image.scale.y = lerp(image.scale.y, 1, .2);
-      image.rotation.z = lerp(image.rotation.z, imageData[image.name].rotation + Math.sin(elapsedTime * .5 + imageData[image.name].offset) * .15, .2);
-    }
+    image.scale.x = lerp(image.scale.x, scale, .1);
+    image.scale.y = lerp(image.scale.y, scale, .1);
+    image.rotation.z = lerp(image.rotation.z, rotation, .2);
+
+    if (found)
+      mouseShouldBePointer = true
   });
 
   // Change pointer styling
-  if (pointer) {
+  if (mouseShouldBePointer) {
     document.body.style.cursor = 'pointer';
   } else if (document.body.style.cursor === 'pointer') {
     document.body.style.cursor = 'auto';
