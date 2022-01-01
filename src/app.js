@@ -1,7 +1,3 @@
-// TODOS: 
-// Physics objects
-// Implement AWS
-
 import './style.css';
 import * as THREE from 'three';
 import CANNON from 'cannon' 
@@ -18,6 +14,7 @@ import {
   plantMaterial,
   mugMaterial,
 } from './materials';
+import names from './identifiers';
 import { addLights } from './lighting';
 import { gltfLoader, textureLoader } from './loaders';
 
@@ -28,10 +25,21 @@ export const gui = new dat.GUI();
 gui.hide();
 */
 
-// Canvas
-const canvas = document.querySelector('canvas.webgl');
 
-// Scene
+/**
+ * 
+ * 
+ * 
+ * This part is loads of set up
+ * 
+ * 
+ * 
+ */
+
+/**
+ * Canvas & scene
+ */
+const canvas = document.querySelector('canvas.webgl');
 export const scene = new THREE.Scene();
 
 /**
@@ -98,12 +106,15 @@ effectComposer.setSize(sizes.width, sizes.height);
 const renderPass = new RenderPass(scene, camera);
 effectComposer.addPass(renderPass);
 
-const deskSceneString = 'DeskScene';
-const monitorString = 'Monitor';
-const plantString = 'MovablePlant';
-const potString = 'MovablePot';
-const mugString = 'MovableMugObject';
-
+/**
+ * 
+ * 
+ * 
+ * Start of actual code
+ * 
+ * 
+ * 
+ */
 const allMeshs = [];
 
 // Computer images
@@ -245,13 +256,13 @@ gltfLoader.load('./desk_scene.glb', gltf => {
       allMeshs.push(child);
     }
     
-    if (child.name.includes(deskSceneString)) {
+    if (child.name.includes(names.desk)) {
       if (child.name.includes('Wall')) {
         child.scale.x *= 2;
         child.position.z = child.position.z + 1;
       }
       child.material = bakedDeskMaterial;
-    } else if (child.name.includes(monitorString)) {
+    } else if (child.name.includes(names.monitor)) {
       if (child.name === 'MonitorFace') {
         child.material = monitorWallpaperMaterial;
       } else {
@@ -278,13 +289,13 @@ let draggableMeshIntersects = [];
 gltfLoader.load('./deskphysicsobjects.glb', gltf => {
   const additions = [];
   gltf.scene.traverse(child => {
-    if (child.name === plantString) {
+    if (child.name === names.plant) {
       // child.material = plantMaterial;
       // additions.push(child);
-    } else if (child.name === potString) {
+    } else if (child.name === names.pot) {
       // child.material = potMaterial;
       // additions.push(child);
-    } else if (child.name === mugString) {
+    } else if (child.name === names.mug) {
       child.material = mugMaterial;
       mug = child;
       additions.push(child);
