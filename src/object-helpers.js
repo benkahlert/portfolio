@@ -1,4 +1,12 @@
-import { bakedDeskMaterial, bakedPropsMaterial, bakedMonitorMaterial, monitorWallpaperMaterial } from './materials';
+import {
+  bakedDeskMaterial,
+  bakedPropsMaterial,
+  bakedMonitorMaterial,
+  monitorWallpaperMaterial,
+  plantMaterial,
+  potMaterial,
+  mugMaterial
+} from './materials';
 
 export const configureDeskObject = (obj) => {
   obj.material = bakedDeskMaterial;
@@ -25,4 +33,24 @@ export const configureKeyObject = (obj, keys, keyData) => {
   keyData[obj.name] = obj.position.y;
   obj.material = bakedPropsMaterial;
   keys.push(obj);
+}
+
+export const configureMugObject = (obj) => {
+  obj.material = mugMaterial;
+}
+
+export const configurePlantObject = (obj) => {
+  obj.material = plantMaterial;
+}
+
+export const configurePotObject = (obj) => {
+  obj.material = potMaterial;
+}
+
+export const configureRubicksCubeObject = (obj) => {
+  
+}
+
+export const configurePencilObject = (obj) => {
+  
 }

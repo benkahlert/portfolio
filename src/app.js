@@ -21,7 +21,10 @@ import {
   configureMonitorFaceObject,
   configureMonitorObject,
   configurePropsObject,
-  configureKeyObject
+  configureKeyObject,
+  configureMugObject,
+  configurePotObject,
+  configurePlantObject
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
@@ -146,6 +149,10 @@ const keys = []; // Array for keyboard key meshs
 let keysMouseOver = []; // Array for raycaster intersect results
 const keyData = {} // Used to keep track of key positions so that they can animate correctly
 
+let mug = null;
+let draggableMeshs = [];
+let draggableMeshIntersects = [];
+
 /*
  * Event listeners
  */
@@ -194,24 +201,6 @@ document.addEventListener('mouseup', () => {
   draggingMesh = undefined;
 });
 
-/*
- * Adding things into the scene
- */
-addLights();
-
-/*
- * Add images on the computer monitor
- */
-const githubImage = addImage(Images.Github);
-images.push(githubImage);
-scene.add(githubImage);
-const linkedinImage = addImage(Images.LinkedIn);
-images.push(linkedinImage);
-scene.add(linkedinImage);
-const resumeImage = addImage(Images.Resume);
-images.push(resumeImage);
-scene.add(resumeImage);
-
 /* 
  * Loading functions
  */
@@ -244,38 +233,55 @@ const loadDeskScene = () => {
   
     scene.add(gltf.scene);
   });
+};
+
+const loadProps = () => {
+  gltfLoader.load('./desk_physics_objects.glb', gltf => {
+    const additions = [];
+    gltf.scene.traverse(child => {
+      if (child.name === names.plant) {
+        additions.push(child);
+        configurePlantObject(child);
+      } else if (child.name === names.pot) {
+        additions.push(child);
+        configurePotObject(child);
+      } else if (child.name === names.mug) {
+        configureMugObject(child);
+        mug = child;
+        additions.push(child);
+      }
+    });
+  
+    additions.forEach(addition => {
+      scene.add(addition);
+      draggableMeshs.push(addition);
+    });
+  });
 }
+
+/*
+ * Adding things into the scene
+ */
+addLights();
+
+/*
+ * Add images on the computer monitor
+ */
+const githubImage = addImage(Images.Github);
+images.push(githubImage);
+scene.add(githubImage);
+const linkedinImage = addImage(Images.LinkedIn);
+images.push(linkedinImage);
+scene.add(linkedinImage);
+const resumeImage = addImage(Images.Resume);
+images.push(resumeImage);
+scene.add(resumeImage);
 
 /**
  * Loading
  */
-loadDeskScene(scene);
-
-let mug = null;
-let draggableMeshs = [];
-let draggableMeshIntersects = [];
-
-gltfLoader.load('./deskphysicsobjects.glb', gltf => {
-  const additions = [];
-  gltf.scene.traverse(child => {
-    if (child.name === names.plant) {
-      // child.material = plantMaterial;
-      // additions.push(child);
-    } else if (child.name === names.pot) {
-      // child.material = potMaterial;
-      // additions.push(child);
-    } else if (child.name === names.mug) {
-      child.material = mugMaterial;
-      mug = child;
-      additions.push(child);
-    }
-  });
-
-  additions.forEach(addition => {
-    scene.add(addition);
-    draggableMeshs.push(addition);
-  });
-});
+loadDeskScene();
+loadProps();
 
 /*
  * Physics

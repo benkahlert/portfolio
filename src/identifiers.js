@@ -4,7 +4,7 @@ export default {
   monitorFace: 'MonitorFace',
   plant: 'MovablePlant',
   pot: 'MovablePot',
-  mug: 'MovableMugObject',
+  mug: 'Mug',
   wall: 'Wall',
   key: 'Key',
   keyboardBase: 'KeyboardBase',
