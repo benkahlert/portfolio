@@ -4,7 +4,7 @@ import CANNON from 'cannon'
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { gltfLoader } from './loaders';
+import { gltfLoader, textureLoader } from './loaders';
 
 import {
   configureDeskObject,
@@ -23,6 +23,7 @@ import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from '
 import { lerp } from './helpers';
 import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
 import { addText } from './font';
+import axios from 'axios';
 
 
 /**
@@ -286,9 +287,9 @@ const addGroupToScene = (children, group, name) => {
  * Adding things into the scene
  */
 addLights();
-const githubImage = addImage(Images.Github);
-images.push(githubImage);
-scene.add(githubImage);
+// const githubImage = addImage(Images.Github);
+// images.push(githubImage);
+// scene.add(githubImage);
 const linkedinImage = addImage(Images.LinkedIn);
 images.push(linkedinImage);
 scene.add(linkedinImage);
@@ -384,5 +385,18 @@ const tick = () => {
   else if (document.body.style.cursor === 'pointer')
     document.body.style.cursor = 'auto';
 };
+
+const toDataURL = url => fetch(url).then(response => response.blob()).then(blob => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.onloadend = () => resolve(reader.result)
+  reader.onerror = reject
+  reader.readAsDataURL(blob)
+}))
+
+toDataURL('https://ben-kahlert-portfolio-assets.s3.us-east-2.amazonaws.com/textures/github.png').then(dataUri => {
+  const githubImage = addImage(Images.Github, dataUri);
+  images.push(githubImage);
+  scene.add(githubImage);
+});
 
 tick();
