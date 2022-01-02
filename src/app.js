@@ -21,10 +21,7 @@ import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 import { lerp } from './helpers';
-import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies } from './physics';
-
-import * as dat from 'dat.gui';
-export const gui = new dat.GUI();
+import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
 
 
 /**
@@ -83,9 +80,10 @@ scene.add(camera);
 const controls = new FlyControls(camera, canvas);
 // controls.movementSpeed = 0.005;
 // controls.rollSpeed = 0.001;
+// controls.dragToLook = true;
+
 controls.movementSpeed = 0;
 controls.rollSpeed = 0;
-// controls.dragToLook = true;
 
 /**
  * Renderer
@@ -171,6 +169,7 @@ document.addEventListener('mousemove', (event) => {
   if (currentSelectedPhysicsObject) {
     let objectName = currentSelectedPhysicsObject.object.name;
     objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
+    objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
 
     const horizontalMultiplier = 3000;
     const verticalMultiplier = 1500;
@@ -264,7 +263,7 @@ const loadProps = () => {
 
     physicsMeshToBodyMap[names.mug] = mugBody;
     physicsMeshToBodyMap[names.pencil] = pencilBody;
-    // physicsMeshToBodyMap[names.rubicksCube] = pencilBody;
+    physicsMeshToBodyMap[names.rubicksCube] = rubicksCubeBody;
   
     scene.add(mug);
     physicsObjects.push(mug);
@@ -310,6 +309,7 @@ const cannonDebugRenderer = createCannonDebugRenderer(scene, world);
 createKinematicBodies(world);
 const mugBody = createMugBody(world);
 const pencilBody = createPencilBody(world);
+const rubicksCubeBody = createRubicksCubeBody(world);
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -334,6 +334,11 @@ const tick = () => {
   if (pencil && pencilBody) {
     pencil.position.copy(pencilBody.position);
     pencil.quaternion.copy(pencilBody.quaternion);
+  }
+
+  if (rubicksCube && rubicksCubeBody) {
+    rubicksCube.position.copy(rubicksCubeBody.position);
+    rubicksCube.quaternion.copy(rubicksCubeBody.quaternion);
   }
 
   // Render through the effect composer

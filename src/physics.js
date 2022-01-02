@@ -1,6 +1,9 @@
 import CannonDebugger from 'cannon-es-debugger';
 import CANNON from 'cannon';
 
+import * as dat from 'dat.gui';
+export const gui = new dat.GUI();
+
 /*
  * Physics
  */
@@ -40,6 +43,28 @@ export const createPencilBody = (world) => {
   world.addBody(pencilBody);
 
   return pencilBody;
+}
+
+export const createRubicksCubeBody = (world) => {
+  const cubeShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
+  const cubeBody = new CANNON.Body({
+    mass: .9,
+    position: new CANNON.Vec3(2.61, .84, 1.38),
+    shape: cubeShape,
+  });
+  cubeBody.quaternion.y = -.6;
+  world.addBody(cubeBody);
+
+  const positionFolder = gui.addFolder('position');
+  positionFolder.add(cubeBody.position, 'x');
+  positionFolder.add(cubeBody.position, 'y');
+  positionFolder.add(cubeBody.position, 'z');
+  const scaleFolder = gui.addFolder('scale');
+  scaleFolder.add(cubeShape.halfExtents, 'x');
+  scaleFolder.add(cubeShape.halfExtents, 'y');
+  scaleFolder.add(cubeShape.halfExtents, 'z');
+
+  return cubeBody;
 }
 
 export const createKinematicBodies = (world) => {
