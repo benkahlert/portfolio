@@ -1,8 +1,8 @@
 import CannonDebugger from 'cannon-es-debugger';
 import CANNON from 'cannon';
 
-import * as dat from 'dat.gui';
-export const gui = new dat.GUI();
+// import * as dat from 'dat.gui';
+// export const gui = new dat.GUI();
 
 /*
  * Physics
@@ -56,16 +56,20 @@ export const createRubicksCubeBody = (world) => {
   cubeBody.quaternion.y = -.6;
   world.addBody(cubeBody);
 
-  const positionFolder = gui.addFolder('position');
-  positionFolder.add(cubeBody.position, 'x');
-  positionFolder.add(cubeBody.position, 'y');
-  positionFolder.add(cubeBody.position, 'z');
-  const scaleFolder = gui.addFolder('scale');
-  scaleFolder.add(cubeShape.halfExtents, 'x');
-  scaleFolder.add(cubeShape.halfExtents, 'y');
-  scaleFolder.add(cubeShape.halfExtents, 'z');
-
   return cubeBody;
+}
+
+export const createNameplateBody = (world) => {
+  const nameplateShape = new CANNON.Box(new CANNON.Vec3(.055, .083, .18));
+  const nameplateBody = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(.65, .8215, .95),
+    shape: nameplateShape,
+  });
+  nameplateBody.quaternion.y = -.82;
+  world.addBody(nameplateBody);
+
+  return nameplateBody;
 }
 
 export const createKinematicBodies = (world) => {

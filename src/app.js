@@ -22,7 +22,7 @@ import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 import { lerp } from './helpers';
-import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
+import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody, createNameplateBody } from './physics';
 
 
 /**
@@ -79,12 +79,12 @@ scene.add(camera);
 
 // Controls
 const controls = new FlyControls(camera, canvas);
-controls.movementSpeed = 0.005;
-controls.rollSpeed = 0.001;
-controls.dragToLook = true;
+// controls.movementSpeed = 0.005;
+// controls.rollSpeed = 0.001;
+// controls.dragToLook = true;
 
-// controls.movementSpeed = 0;
-// controls.rollSpeed = 0;
+controls.movementSpeed = 0;
+controls.rollSpeed = 0;
 
 /**
  * Renderer
@@ -172,6 +172,7 @@ document.addEventListener('mousemove', (event) => {
     let objectName = currentSelectedPhysicsObject.object.name;
     objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
     objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
+    objectName = objectName.includes(names.nameplate) ? names.nameplate : objectName;
 
     const horizontalMultiplier = 3000;
     const verticalMultiplier = 1500;
@@ -270,7 +271,7 @@ const loadProps = () => {
     physicsMeshToBodyMap[names.mug] = mugBody;
     physicsMeshToBodyMap[names.pencil] = pencilBody;
     physicsMeshToBodyMap[names.rubicksCube] = rubicksCubeBody;
-    // physicsMeshToBodyMap[names.nameplate] = nameplateBody;
+    physicsMeshToBodyMap[names.nameplate] = nameplateBody;
   
     scene.add(mug);
     physicsObjects.push(mug);
@@ -318,6 +319,7 @@ createKinematicBodies(world);
 const mugBody = createMugBody(world);
 const pencilBody = createPencilBody(world);
 const rubicksCubeBody = createRubicksCubeBody(world);
+const nameplateBody = createNameplateBody(world);
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -349,15 +351,20 @@ const tick = () => {
     rubicksCube.quaternion.copy(rubicksCubeBody.quaternion);
   }
 
+  if (nameplate && nameplateBody) {
+    nameplate.position.copy(nameplateBody.position);
+    nameplate.quaternion.copy(nameplateBody.quaternion);
+  }
+
   // Render through the effect composer
   effectComposer.render();
-  cannonDebugRenderer.update();
+  // cannonDebugRenderer.update();
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 
-  // camera.rotation.y = -(mouse.position.x - .5) / 40;
-  // camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
+  camera.rotation.y = -(mouse.position.x - .5) / 40;
+  camera.position.x = 1.5 + (mouse.position.x - .5) / 20;
 
   let mouseShouldBePointer = false;
 
@@ -385,7 +392,7 @@ const tick = () => {
   });
 
   // Change pointer styling
-  if (mouseShouldBePointer)
+  if (mouseShouldBePointer || currentSelectedPhysicsObject != undefined || physicsObjectsMouseOver.length > 0)
     document.body.style.cursor = 'pointer';
   else if (document.body.style.cursor === 'pointer')
     document.body.style.cursor = 'auto';

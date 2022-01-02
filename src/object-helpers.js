@@ -65,21 +65,6 @@ export const configurePotObject = (obj) => {
 }
 
 export const configureRubicksCubeObject = (obj) => {
-  // if (obj.name === names.rubicksCubeRed) {
-  //   obj.material = rubicksCubeRedMaterial;
-  // } else if (obj.name === names.rubicksCubeBlue) {
-  //   obj.material = rubicksCubeBlueMaterial;
-  // } else if (obj.name === names.rubicksCubeWhite) {
-  //   obj.material = rubicksCubeWhiteMaterial;
-  // } else if (obj.name === names.rubicksCubeGreen) {
-  //   obj.material = rubicksCubeGreenMaterial;
-  // } else if (obj.name === names.rubicksCubeOrange) {
-  //   obj.material = rubicksCubeOrangeMaterial;
-  // } else if (obj.name === names.rubicksCubeYellow) {
-  //   obj.material = rubicksCubeYellowMaterial;
-  // } else {
-  //   obj.material = rubicksCubeBlackMaterial;
-  // }
   obj.material = bakedPhysicsObjectsMaterial;
 }
 
@@ -98,14 +83,6 @@ export const configurePencilObject = (obj) => {
 }
 
 export const configureNameplateObject = (obj) => {
-  // if (obj.name === names.nameplateBase) {
-  //   obj.material = nameplateBaseMaterial;
-  // } else if (obj.name === names.nameplateBackground) {
-  //   obj.material = nameplateBackgroundMaterial;
-  // } else if (obj.name === names.nameplateName) {
-  //   obj.material = nameplateNameMaterial;
-  // }
-  console.log(obj.name);
   if (obj.name === names.nameplateName) {
     obj.material = nameplateNameMaterial;
   } else {
