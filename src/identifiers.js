@@ -14,4 +14,11 @@ export default {
   pencilEraser: 'PencilEraser',
   pencilLead: 'PencilLead',
   pencilWood: 'PencilWood',
+  rubicksCube: 'RubicksCube',
+  rubicksCubeRed: 'RubicksCubeRed',
+  rubicksCubeBlue: 'RubicksCubeBlue',
+  rubicksCubeWhite: 'RubicksCubeWhite',
+  rubicksCubeOrange: 'RubicksCubeOrange',
+  rubicksCubeGreen: 'RubicksCubeGreen',
+  rubicksCubeYellow: 'RubicksCubeYellow',
 }

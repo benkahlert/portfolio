@@ -15,6 +15,7 @@ import {
   configureKeyObject,
   configureMugObject,
   configurePencilObject,
+  configureRubicksCubeObject,
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
@@ -140,6 +141,7 @@ let keysMouseOver = []; // Array for raycaster intersect results
 const keyData = {} // Used to keep track of key positions so that they can animate correctly
 
 let pencil = new THREE.Group(); // Pencil physics object
+let rubicksCube = new THREE.Group(); // Rubicks cube physics object
 let mug = undefined; // Mug physics object
 
 let physicsObjects = []; // Array for physics object meshs
@@ -244,43 +246,46 @@ const loadDeskScene = () => {
 
 const loadProps = () => {
   gltfLoader.load('./desk_physics_objects_final.glb', gltf => {
-    const additions = [];
-    const pencilChildren = []
+    const pencilChildren = [];
+    const cubeChildren = [];
+
     gltf.scene.traverse(child => {
       if (child.name === names.mug) {
         configureMugObject(child);
         mug = child;
-        additions.push(child);
-        physicsMeshToBodyMap[child.name] = mugBody;
       } else if (child.name.includes(names.pencil)) {
         configurePencilObject(child);
         pencilChildren.push(child);
-        physicsMeshToBodyMap[names.pencil] = pencilBody;
+      } else if (child.name.includes(names.rubicksCube)) {
+        configureRubicksCubeObject(child);
+        cubeChildren.push(child);
       }
     });
-  
-    additions.forEach(addition => {
-      scene.add(addition);
-      physicsObjects.push(addition);
-    });
 
-    pencilChildren.forEach(pencilChild => {
-      pencil.attach(pencilChild);
-    });
-    scene.add(pencil);
-    physicsObjects.push(pencil);
-    pencil.name = names.pencil;
+    physicsMeshToBodyMap[names.mug] = mugBody;
+    physicsMeshToBodyMap[names.pencil] = pencilBody;
+    // physicsMeshToBodyMap[names.rubicksCube] = pencilBody;
+  
+    scene.add(mug);
+    physicsObjects.push(mug);
+    addGroupToScene(pencilChildren, pencil, names.pencil);
+    addGroupToScene(cubeChildren, rubicksCube, names.rubicksCube);
   });
+}
+
+const addGroupToScene = (children, group, name) => {
+  children.forEach(child => {
+    group.attach(child);
+  });
+  scene.add(group);
+  physicsObjects.push(group);
+  group.name = name;
 }
 
 /*
  * Adding things into the scene
  */
 addLights();
-
-/*
- * Add images on the computer monitor
- */
 const githubImage = addImage(Images.Github);
 images.push(githubImage);
 scene.add(githubImage);

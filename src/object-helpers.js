@@ -1,4 +1,3 @@
-import { Vector3 } from 'three';
 import {
   bakedDeskMaterial,
   bakedPropsMaterial,
@@ -12,6 +11,13 @@ import {
   pencilWoodMaterial,
   pencilHolderMaterial,
   pencilEraserMaterial,
+  rubicksCubeRedMaterial,
+  rubicksCubeBlueMaterial,
+  rubicksCubeWhiteMaterial,
+  rubicksCubeGreenMaterial,
+  rubicksCubeOrangeMaterial,
+  rubicksCubeYellowMaterial,
+  rubicksCubeBlackMaterial,
 } from './materials';
 import names from './identifiers';
 
@@ -55,7 +61,21 @@ export const configurePotObject = (obj) => {
 }
 
 export const configureRubicksCubeObject = (obj) => {
-  
+  if (obj.name === names.rubicksCubeRed) {
+    obj.material = rubicksCubeRedMaterial;
+  } else if (obj.name === names.rubicksCubeBlue) {
+    obj.material = rubicksCubeBlueMaterial;
+  } else if (obj.name === names.rubicksCubeWhite) {
+    obj.material = rubicksCubeWhiteMaterial;
+  } else if (obj.name === names.rubicksCubeGreen) {
+    obj.material = rubicksCubeGreenMaterial;
+  } else if (obj.name === names.rubicksCubeOrange) {
+    obj.material = rubicksCubeOrangeMaterial;
+  } else if (obj.name === names.rubicksCubeYellow) {
+    obj.material = rubicksCubeYellowMaterial;
+  } else {
+    obj.material = rubicksCubeBlackMaterial;
+  }
 }
 
 export const configurePencilObject = (obj) => {
