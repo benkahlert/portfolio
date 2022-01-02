@@ -4,7 +4,7 @@ import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
 
 export const addText = (scene) => {
   const loader = new THREE.FontLoader();
-  loader.load('./fonts/Roboto_Regular.json', (font) => {
+  loader.load('./fonts/helvetiker_regular.typeface.json', (font) => {
     const color = new THREE.Color( 0x000000 );
     const matDark = new THREE.MeshBasicMaterial( {
       color: color,
@@ -43,7 +43,7 @@ export const addText = (scene) => {
 
     shapes.push.apply(shapes, holeShapes);
 
-    const style = SVGLoader.getStrokeStyle(5, color.getStyle());
+    const style = SVGLoader.getStrokeStyle(2.5, color.getStyle());
     const strokeText = new THREE.Group();
 
     for (let i = 0; i < shapes.length; i ++) {
