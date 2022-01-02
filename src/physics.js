@@ -22,9 +22,10 @@ export const createMugBody = (world) => {
   const handleShape = new CANNON.Box(new CANNON.Vec3(.1, .025, .12));
   const mugBody = new CANNON.Body({
     mass: 1,
-    position: new CANNON.Vec3(2.8, 1.879, 1.7645),
+    position: new CANNON.Vec3(3.1, 0.879, 1.9645),
     shape: mugShape,
   });
+  
   mugBody.addShape(handleShape, new CANNON.Vec3(-.175, 0, 0));
   mugBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
   world.addBody(mugBody);
@@ -49,7 +50,7 @@ export const createRubicksCubeBody = (world) => {
   const cubeShape = new CANNON.Box(new CANNON.Vec3(.1, .1, .1));
   const cubeBody = new CANNON.Body({
     mass: .9,
-    position: new CANNON.Vec3(2.61, .84, 1.38),
+    position: new CANNON.Vec3(2.775, .84, 1.3),
     shape: cubeShape,
   });
   cubeBody.quaternion.y = -.6;

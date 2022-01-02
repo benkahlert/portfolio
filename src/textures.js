@@ -15,6 +15,9 @@ configureBakedTexture(bakedPropsTexture);
 export const bakedMonitorTexture = textureLoader.load('./textures/monitor.jpg');
 configureBakedTexture(bakedMonitorTexture);
 
+export const bakedPhysicsObjectsTexture = textureLoader.load('./textures/physics_objects.jpg');
+configureBakedTexture(bakedPhysicsObjectsTexture);
+
 export const monitorWallpaperTexture = textureLoader.load('./images/wallpaper.jpg');
 
 // Scale and offset the monitor texture since the wallpaper image is too big

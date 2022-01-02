@@ -21,4 +21,8 @@ export default {
   rubicksCubeOrange: 'RubicksCubeOrange',
   rubicksCubeGreen: 'RubicksCubeGreen',
   rubicksCubeYellow: 'RubicksCubeYellow',
+  nameplate: 'Nameplate',
+  nameplateBase: 'NameplateBase',
+  nameplateBackground: 'NameplateBackground',
+  nameplateName: 'NameplateName',
 }

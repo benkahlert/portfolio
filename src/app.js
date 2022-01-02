@@ -16,6 +16,7 @@ import {
   configureMugObject,
   configurePencilObject,
   configureRubicksCubeObject,
+  configureNameplateObject,
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
@@ -78,12 +79,12 @@ scene.add(camera);
 
 // Controls
 const controls = new FlyControls(camera, canvas);
-// controls.movementSpeed = 0.005;
-// controls.rollSpeed = 0.001;
-// controls.dragToLook = true;
+controls.movementSpeed = 0.005;
+controls.rollSpeed = 0.001;
+controls.dragToLook = true;
 
-controls.movementSpeed = 0;
-controls.rollSpeed = 0;
+// controls.movementSpeed = 0;
+// controls.rollSpeed = 0;
 
 /**
  * Renderer
@@ -140,6 +141,7 @@ const keyData = {} // Used to keep track of key positions so that they can anima
 
 let pencil = new THREE.Group(); // Pencil physics object
 let rubicksCube = new THREE.Group(); // Rubicks cube physics object
+let nameplate = new THREE.Group(); // Nameplate physics object
 let mug = undefined; // Mug physics object
 
 let physicsObjects = []; // Array for physics object meshs
@@ -244,9 +246,10 @@ const loadDeskScene = () => {
 };
 
 const loadProps = () => {
-  gltfLoader.load('./desk_physics_objects_final.glb', gltf => {
+  gltfLoader.load('./physics_objects_no_materials.glb', gltf => {
     const pencilChildren = [];
     const cubeChildren = [];
+    const nameplateChildren = [];
 
     gltf.scene.traverse(child => {
       if (child.name === names.mug) {
@@ -258,17 +261,22 @@ const loadProps = () => {
       } else if (child.name.includes(names.rubicksCube)) {
         configureRubicksCubeObject(child);
         cubeChildren.push(child);
+      } else if (child.name.includes(names.nameplate)) {
+        configureNameplateObject(child);
+        nameplateChildren.push(child);
       }
     });
 
     physicsMeshToBodyMap[names.mug] = mugBody;
     physicsMeshToBodyMap[names.pencil] = pencilBody;
     physicsMeshToBodyMap[names.rubicksCube] = rubicksCubeBody;
+    // physicsMeshToBodyMap[names.nameplate] = nameplateBody;
   
     scene.add(mug);
     physicsObjects.push(mug);
     addGroupToScene(pencilChildren, pencil, names.pencil);
     addGroupToScene(cubeChildren, rubicksCube, names.rubicksCube);
+    addGroupToScene(nameplateChildren, nameplate, names.nameplate);
   });
 }
 

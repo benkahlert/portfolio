@@ -1,10 +1,11 @@
 import { MeshBasicMaterial, MeshStandardMaterial } from "three";
-import { bakedDeskTexture, bakedPropsTexture, bakedMonitorTexture, monitorWallpaperTexture } from "./textures";
+import { bakedDeskTexture, bakedPropsTexture, bakedMonitorTexture, monitorWallpaperTexture, bakedPhysicsObjectsTexture } from "./textures";
 
 // Baked materials
 export const bakedDeskMaterial = new MeshBasicMaterial({ map: bakedDeskTexture });
 export const bakedPropsMaterial = new MeshBasicMaterial({ map: bakedPropsTexture });
 export const bakedMonitorMaterial = new MeshBasicMaterial({ map: bakedMonitorTexture });
+export const bakedPhysicsObjectsMaterial = new MeshBasicMaterial({ map: bakedPhysicsObjectsTexture });
 export const monitorWallpaperMaterial = new MeshStandardMaterial({ color: 0xFFFFEE, map: monitorWallpaperTexture, emissive: 0x222222 });
 
 // Dynamic object materials
@@ -25,3 +26,7 @@ export const rubicksCubeWhiteMaterial = new MeshStandardMaterial({ color: 0xE6E4
 export const rubicksCubeGreenMaterial = new MeshStandardMaterial({ color: 0x35B950, flatShading: true });
 export const rubicksCubeOrangeMaterial = new MeshStandardMaterial({ color: 0xFF8635, flatShading: true });
 export const rubicksCubeYellowMaterial = new MeshStandardMaterial({ color: 0xE7E447, flatShading: true });
+
+export const nameplateBaseMaterial = new MeshStandardMaterial({ color: 0x272425 });
+export const nameplateBackgroundMaterial = new MeshStandardMaterial({ color: 0xE6E4E7 });
+export const nameplateNameMaterial = new MeshStandardMaterial({ color: 0x000000 });
