@@ -16,13 +16,13 @@ import {
   configureMugObject,
   configurePencilObject,
   configureRubicksCubeObject,
-  configureNameplateObject,
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
 import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
 import { lerp } from './helpers';
-import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody, createNameplateBody } from './physics';
+import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
+import { addText } from './font';
 
 
 /**
@@ -73,7 +73,7 @@ export const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(1.5, 1.8, 4.5);
+camera.position.set(1.5, 1.8, 4.6);
 camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), -.125);
 scene.add(camera);
 
@@ -141,7 +141,6 @@ const keyData = {} // Used to keep track of key positions so that they can anima
 
 let pencil = new THREE.Group(); // Pencil physics object
 let rubicksCube = new THREE.Group(); // Rubicks cube physics object
-let nameplate = new THREE.Group(); // Nameplate physics object
 let mug = undefined; // Mug physics object
 
 let physicsObjects = []; // Array for physics object meshs
@@ -172,7 +171,6 @@ document.addEventListener('mousemove', (event) => {
     let objectName = currentSelectedPhysicsObject.object.name;
     objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
     objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
-    objectName = objectName.includes(names.nameplate) ? names.nameplate : objectName;
 
     const horizontalMultiplier = 3000;
     const verticalMultiplier = 1500;
@@ -250,7 +248,6 @@ const loadProps = () => {
   gltfLoader.load('./physics_objects_no_materials.glb', gltf => {
     const pencilChildren = [];
     const cubeChildren = [];
-    const nameplateChildren = [];
 
     gltf.scene.traverse(child => {
       if (child.name === names.mug) {
@@ -262,22 +259,17 @@ const loadProps = () => {
       } else if (child.name.includes(names.rubicksCube)) {
         configureRubicksCubeObject(child);
         cubeChildren.push(child);
-      } else if (child.name.includes(names.nameplate)) {
-        configureNameplateObject(child);
-        nameplateChildren.push(child);
       }
     });
 
     physicsMeshToBodyMap[names.mug] = mugBody;
     physicsMeshToBodyMap[names.pencil] = pencilBody;
     physicsMeshToBodyMap[names.rubicksCube] = rubicksCubeBody;
-    physicsMeshToBodyMap[names.nameplate] = nameplateBody;
   
     scene.add(mug);
     physicsObjects.push(mug);
     addGroupToScene(pencilChildren, pencil, names.pencil);
     addGroupToScene(cubeChildren, rubicksCube, names.rubicksCube);
-    addGroupToScene(nameplateChildren, nameplate, names.nameplate);
   });
 }
 
@@ -311,6 +303,7 @@ loadDeskScene();
 loadProps();
 const world = createWorld(scene);
 const cannonDebugRenderer = createCannonDebugRenderer(scene, world);
+addText(scene);
 
 /*
  * Physics
@@ -319,7 +312,6 @@ createKinematicBodies(world);
 const mugBody = createMugBody(world);
 const pencilBody = createPencilBody(world);
 const rubicksCubeBody = createRubicksCubeBody(world);
-const nameplateBody = createNameplateBody(world);
 
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -349,11 +341,6 @@ const tick = () => {
   if (rubicksCube && rubicksCubeBody) {
     rubicksCube.position.copy(rubicksCubeBody.position);
     rubicksCube.quaternion.copy(rubicksCubeBody.quaternion);
-  }
-
-  if (nameplate && nameplateBody) {
-    nameplate.position.copy(nameplateBody.position);
-    nameplate.quaternion.copy(nameplateBody.quaternion);
   }
 
   // Render through the effect composer

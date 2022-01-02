@@ -6,7 +6,7 @@ const configureBakedTexture = (texture) => {
   texture.encoding = sRGBEncoding;
 }
 
-export const bakedDeskTexture = textureLoader.load('./textures/desk_scene.jpg');
+export const bakedDeskTexture = textureLoader.load('./textures/old_desk_scene.jpg');
 configureBakedTexture(bakedDeskTexture);
 
 export const bakedPropsTexture = textureLoader.load('./textures/static_desk_props.jpg');
