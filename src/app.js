@@ -4,7 +4,7 @@ import CANNON from 'cannon'
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { gltfLoader, textureLoader } from './loaders';
+import { dracoLoader, textureLoader } from './loaders';
 
 import {
   configureDeskObject,
@@ -23,7 +23,10 @@ import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from '
 import { lerp } from './helpers';
 import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
 import { addText } from './font';
-import axios from 'axios';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { LoadingManager } from 'three';
+import { gsap } from 'gsap';
+// import axios from 'axios';
 
 
 /**
@@ -149,71 +152,21 @@ let physicsObjectsMouseOver = []; // Array for physics objects intersect results
 let physicsMeshToBodyMap = {}; // Map that holds each physics mesh's corresponding body
 let currentSelectedPhysicsObject = undefined;
 
-/*
- * Event listeners
- */
-
-document.addEventListener('mousemove', (event) => {
-  // Mouse pointer calculations
-  mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
-  mouse.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-  mouse.position.x = event.clientX / sizes.width;
-  mouse.position.y = event.clientY / sizes.height;
-  const diff = new THREE.Vector2(mouse.pointer.x - mouse.lastPointer.x, mouse.pointer.y - mouse.lastPointer.y);
-
-  // Raycaster checks
-  raycaster.setFromCamera(mouse.pointer, camera);
-  imagesMouseOver = raycaster.intersectObjects(images, false);
-  keysMouseOver = raycaster.intersectObjects(keys, false);
-  physicsObjectsMouseOver = raycaster.intersectObjects(physicsObjects, true);
-
-  if (currentSelectedPhysicsObject) {
-    let objectName = currentSelectedPhysicsObject.object.name;
-    objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
-    objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
-
-    const horizontalMultiplier = 3000;
-    const verticalMultiplier = 1500;
-    const maxForce = 1.2;
-
-    const horizontalForce = diff.x * horizontalMultiplier;
-    const verticalForce = diff.y * verticalMultiplier;
-    const horizontalMagnitude = Math.min(Math.abs(diff.x * horizontalMultiplier), maxForce);
-    const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce / 1.5);
-
-    const physicsBody = physicsMeshToBodyMap[objectName];
-
-    physicsBody.applyForce(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), (verticalMagnitude + (horizontalMagnitude * .25)) * Math.sign(verticalForce), 0), physicsBody.position);
-  }
-});
-
-document.addEventListener('mousedown', () => {
-  // If mouse is over an image when clicked
-  if (imagesMouseOver.length > 0) {
-    const imageMouseOver = imagesMouseOver[0].object.name;
-
-    if (imageMouseOver === Images.Github) {
-      window.open(githubUrl, '_blank')
-    } else if (imageMouseOver === Images.LinkedIn) {
-      window.open(linkedinUrl, '_blank')
-    } else if (imageMouseOver === Images.Resume) {
-      window.open(resumeUrl, '_blank')
-    }
-  }
-
-  if (physicsObjectsMouseOver.length > 0) {
-    currentSelectedPhysicsObject = physicsObjectsMouseOver[0];
-  }
-});
-
-document.addEventListener('mouseup', () => {
-  currentSelectedPhysicsObject = undefined;
-});
-
 /* 
  * Loading functions
  */
+const loadingManager = new LoadingManager(() => {
+  // When everything is loaded
+  gsap.to(overlayMaterial.uniforms.uAlpha, {
+    value: 0,
+    duration: 1,
+  });
+}, () => {
+  // When asset is loaded
+});
+const gltfLoader = new GLTFLoader(loadingManager);
+gltfLoader.setDRACOLoader(dracoLoader);
+
 const loadDeskScene = () => {
   gltfLoader.load('./desk_scene.glb', gltf => {
     gltf.scene.traverse(child => {
@@ -287,9 +240,9 @@ const addGroupToScene = (children, group, name) => {
  * Adding things into the scene
  */
 addLights();
-// const githubImage = addImage(Images.Github);
-// images.push(githubImage);
-// scene.add(githubImage);
+const githubImage = addImage(Images.Github);
+images.push(githubImage);
+scene.add(githubImage);
 const linkedinImage = addImage(Images.LinkedIn);
 images.push(linkedinImage);
 scene.add(linkedinImage);
@@ -303,8 +256,31 @@ scene.add(resumeImage);
 loadDeskScene();
 loadProps();
 const world = createWorld(scene);
-const cannonDebugRenderer = createCannonDebugRenderer(scene, world);
+// const cannonDebugRenderer = createCannonDebugRenderer(scene, world);
 addText(scene);
+
+const overlayGeometry = new THREE.PlaneBufferGeometry(2, 2, 1, 1);
+const overlayMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uAlpha: { value: 1 },
+  },
+  transparent: true,
+  vertexShader: `
+    void main()
+    {
+      gl_Position = vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uAlpha;
+    void main()
+    {
+      gl_FragColor = vec4(0.695, 0.79, 0.695, uAlpha);
+    }
+  `
+});
+const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+scene.add(overlay);
 
 /*
  * Physics
@@ -386,17 +362,88 @@ const tick = () => {
     document.body.style.cursor = 'auto';
 };
 
-const toDataURL = url => fetch(url).then(response => response.blob()).then(blob => new Promise((resolve, reject) => {
-  const reader = new FileReader()
-  reader.onloadend = () => resolve(reader.result)
-  reader.onerror = reject
-  reader.readAsDataURL(blob)
-}))
+// const toDataURL = url => fetch(url).then(response => response.blob()).then(blob => new Promise((resolve, reject) => {
+//   const reader = new FileReader()
+//   reader.onloadend = () => resolve(reader.result)
+//   reader.onerror = reject
+//   reader.readAsDataURL(blob)
+// }))
 
-toDataURL('https://ben-kahlert-portfolio-assets.s3.us-east-2.amazonaws.com/textures/github.png').then(dataUri => {
-  const githubImage = addImage(Images.Github, dataUri);
-  images.push(githubImage);
-  scene.add(githubImage);
-});
+// toDataURL('https://ben-kahlert-portfolio-assets.s3.us-east-2.amazonaws.com/textures/github.png').then(dataUri => {
+//   const githubImage = addImage(Images.Github, dataUri);
+//   images.push(githubImage);
+//   scene.add(githubImage);
+// });
 
 tick();
+
+
+
+
+
+
+
+
+/*
+ * Event listeners
+ */
+
+document.addEventListener('mousemove', (event) => {
+  // Mouse pointer calculations
+  mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
+  mouse.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+  mouse.position.x = event.clientX / sizes.width;
+  mouse.position.y = event.clientY / sizes.height;
+  const diff = new THREE.Vector2(mouse.pointer.x - mouse.lastPointer.x, mouse.pointer.y - mouse.lastPointer.y);
+
+  // Raycaster checks
+  raycaster.setFromCamera(mouse.pointer, camera);
+  imagesMouseOver = raycaster.intersectObjects(images, false);
+  keysMouseOver = raycaster.intersectObjects(keys, false);
+  physicsObjectsMouseOver = raycaster.intersectObjects(physicsObjects, true);
+
+  if (currentSelectedPhysicsObject) {
+    let objectName = currentSelectedPhysicsObject.object.name;
+    objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
+    objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
+
+    console.log(objectName);
+
+    const horizontalMultiplier = 3000;
+    const verticalMultiplier = 1500;
+    const maxForce = .2;
+
+    const horizontalForce = diff.x * horizontalMultiplier;
+    const verticalForce = diff.y * verticalMultiplier;
+    const horizontalMagnitude = Math.min(Math.abs(diff.x * horizontalMultiplier), maxForce);
+    const verticalMagnitude = Math.min(Math.abs(diff.y * verticalMultiplier), maxForce / 1.5);
+
+    const physicsBody = physicsMeshToBodyMap[objectName];
+
+    physicsBody.applyImpulse(new CANNON.Vec3(horizontalMagnitude * Math.sign(horizontalForce), (verticalMagnitude + (horizontalMagnitude * .25)) * Math.sign(verticalForce), 0), physicsBody.position);
+  }
+});
+
+document.addEventListener('mousedown', () => {
+  // If mouse is over an image when clicked
+  if (imagesMouseOver.length > 0) {
+    const imageMouseOver = imagesMouseOver[0].object.name;
+
+    if (imageMouseOver === Images.Github) {
+      window.open(githubUrl, '_blank')
+    } else if (imageMouseOver === Images.LinkedIn) {
+      window.open(linkedinUrl, '_blank')
+    } else if (imageMouseOver === Images.Resume) {
+      window.open(resumeUrl, '_blank')
+    }
+  }
+
+  if (physicsObjectsMouseOver.length > 0) {
+    currentSelectedPhysicsObject = physicsObjectsMouseOver[0];
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  currentSelectedPhysicsObject = undefined;
+});

@@ -6,7 +6,7 @@ import { TextureLoader } from 'three';
 export const textureLoader = new TextureLoader();
 
 // Draco loader
-const dracoLoader = new DRACOLoader();
+export const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('draco/');
 
 // GLTF loader
