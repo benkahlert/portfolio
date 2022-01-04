@@ -19,10 +19,10 @@ import {
 } from './object-helpers';
 import names from './identifiers';
 import { addLights } from './lighting';
-import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl } from './images';
+import { Images, imageData, addImage, githubUrl, linkedinUrl, resumeUrl, createArrowImage } from './images';
 import { lerp } from './helpers';
 import { createWorld, createCannonDebugRenderer, createMugBody, createPencilBody, createKinematicBodies, createRubicksCubeBody } from './physics';
-import { addText } from './font';
+import { addText, helpText } from './font';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { LoadingManager } from 'three';
 import { gsap } from 'gsap';
@@ -151,6 +151,7 @@ let physicsObjects = []; // Array for physics object meshs
 let physicsObjectsMouseOver = []; // Array for physics objects intersect results
 let physicsMeshToBodyMap = {}; // Map that holds each physics mesh's corresponding body
 let currentSelectedPhysicsObject = undefined;
+let hasDragged = false; // Keeps track if we have ever dragged an object
 
 /* 
  * Loading functions
@@ -355,6 +356,11 @@ const tick = () => {
       mouseShouldBePointer = true
   });
 
+  if (helpText && elapsedTime > 5 && !hasDragged)
+    helpText.scale.copy(new THREE.Vector3(lerp(helpText.scale.x, 0.00125, .1), lerp(helpText.scale.y, 0.00125, .1), lerp(helpText.scale.z, 0.00125, .1)));
+  else if (helpText)
+    helpText.scale.copy(new THREE.Vector3(lerp(helpText.scale.x, 0, .35), lerp(helpText.scale.y, 0, .35), lerp(helpText.scale.z, 0, .35)));
+
   // Change pointer styling
   if (mouseShouldBePointer || currentSelectedPhysicsObject != undefined || physicsObjectsMouseOver.length > 0)
     document.body.style.cursor = 'pointer';
@@ -387,7 +393,6 @@ tick();
 /*
  * Event listeners
  */
-
 document.addEventListener('mousemove', (event) => {
   // Mouse pointer calculations
   mouse.lastPointer = new THREE.Vector2(mouse.pointer.x, mouse.pointer.y);
@@ -408,11 +413,9 @@ document.addEventListener('mousemove', (event) => {
     objectName = objectName.includes(names.pencil) ? names.pencil : objectName;
     objectName = objectName.includes(names.rubicksCube) ? names.rubicksCube : objectName;
 
-    console.log(objectName);
-
-    const horizontalMultiplier = 3000;
-    const verticalMultiplier = 1500;
-    const maxForce = .2;
+    const horizontalMultiplier = 4000;
+    const verticalMultiplier = 2500;
+    const maxForce = .25;
 
     const horizontalForce = diff.x * horizontalMultiplier;
     const verticalForce = diff.y * verticalMultiplier;
@@ -441,6 +444,7 @@ document.addEventListener('mousedown', () => {
 
   if (physicsObjectsMouseOver.length > 0) {
     currentSelectedPhysicsObject = physicsObjectsMouseOver[0];
+    hasDragged = true;
   }
 });
 

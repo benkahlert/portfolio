@@ -46,7 +46,7 @@ export const addImage = (image, dataUri) => {
 
   const material = new MeshLambertMaterial({
     map: dataUri ? textureLoader.load(dataUri) : textureLoader.load(data.path),
-    alphaTest: .25,
+    alphaTest: .05,
   });
   const geometry = new PlaneGeometry(data.scale, data.scale);
   const mesh = new Mesh(geometry, material);
